@@ -1,0 +1,60 @@
+<!DOCTYPE HTML>
+
+<html><head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<!-- <meta name="viewport" content="width=560, user-scalable=0"> -->
+<!--meta name="viewport" content="width=700; initial-scale=1.0; maximum-scale=1.0; minimum-scale=1.0; user-scalable=0;"-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<title>sGlide - working</title>
+
+<link rel="stylesheet" href="main.css" />
+
+<style>
+#slider1_vert-marks {margin-left: 60px !important;}
+</style>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+<script type="text/javascript" src="jquery.sglide.range.js"></script>
+
+<script type="text/javascript">
+	function run(){
+		$('#slider1').sGlideRange({
+			'startAt': [50, 75],
+			'width': 600,
+			'height': 22,
+			'unit': 'px',
+			// 'image': 'img/knob_.png',
+			'image': ['img/images/range_knob_01.png', 'img/images/range_knob_02.png'],
+			'pill': false,
+			'totalRange': [58,102],
+			// 'locked': true,
+			'snap': {
+				'marks': true,
+				// 'onlyOnDrop': true,
+				'points': 3
+			},
+			// 'colorShift': ['#3a4d31', '#7bb560'],
+			// 'vertical': true,
+			// 'buttons': true,
+			// 'disabled': true,
+			/*drag: function(o){
+				// console.log('> drag',o);
+				// document.getElementById('percent').innerHTML = o.id+': '+Math.round(o.value) + '%';
+			},
+			onSnap: function(o){
+				// console.log('> onSnap',o);//,o.id,o);
+			}*/
+		});
+	};
+</script>
+
+</head><body onload="run()">
+
+	<div id="percent">%</div>
+	<div id="slider1" class="slider_bar" data-keys="shift" style="background-color:#069; border-radius:10px; height:40px"></div><br /><div id="slider2" class="slider_bar_"></div>
+
+</body></html>
