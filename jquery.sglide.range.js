@@ -22,8 +22,7 @@ version:	1.0.0
 			pill:					// boolean - default: true
 			snap: {
 				marks		: false,
-				hard		: false,
-				onlyOnDrop	: false,
+				type		: 'hard' | 'soft',
 				points		: 0
 			},
 			disabled:				// boolean - default: false
@@ -36,6 +35,9 @@ version:	1.0.0
 		all properties are optional, however, to retrieve data, use one of the callbacks
 
 	goals:
+		- test: positions of locked handles when startAt point specified
+		- snap either handle when dragging one when locked
+		- draggable space between handles when locked
 		- if unit is %, then markers should be also
 		- fix bug: rebuilding vertical rotates again
 
@@ -43,10 +45,7 @@ version:	1.0.0
 
 (function($){
 	var valueObj	= {};
-	var helpers		= {
-		/*'isMobile'	: false,
-		'buttons'	: false*/
-	};
+	var isMobile	= false;
 	var methods		= {
 		destroy: function(){
 			this.each(function(i, el){
@@ -58,15 +57,6 @@ version:	1.0.0
 				var vertContainer = $('#'+guid+'_vert-marks');
 				if (vertContainer[0]) self.unwrap();
 
-				// unwrap buttons marks
-				else {
-					var buttonsContainer = $('#'+guid+'_button-marks');
-					if (buttonsContainer[0]) self.unwrap();
-				}
-
-				// remove buttons
-				if ($('#'+guid+'_plus')[0]) $('#'+guid+'_minus, #'+guid+'_plus').remove();
-
 				var markers = $('#'+guid+'_markers');
 				if (markers.length > 0) markers.remove();
 
@@ -76,7 +66,7 @@ version:	1.0.0
 					'move'	: 'mousemove'
 				};
 
-				if (helpers[guid+'-isMobile']){
+				if (isMobile){
 					mEvt.down = 'touchstart'; mEvt.up = 'touchend'; mEvt.move = 'touchmove';
 				// windows phone touch events
 				} else if (window.navigator.msPointerEnabled){
@@ -88,11 +78,6 @@ version:	1.0.0
 				} else
 					$(document).off('keydown.'+guid).off('keyup.'+guid);
 
-				if (helpers[guid+'-buttons']){
-					$('#'+guid+'_plus').off(mEvt.down).off(mEvt.up);
-					$('#'+guid+'_minus').off(mEvt.down).off(mEvt.up);
-				}
-				
 				$(document).off(mEvt.move+'.'+guid).off(mEvt.up+'.'+guid);
 				$(window).off('orientationchange.'+guid);
 				self.off(mEvt.down);
@@ -100,6 +85,7 @@ version:	1.0.0
 				self.children('.follow_bar').off(mEvt.down).remove();
 				self.removeAttr('style');
 			});
+			return this;
 		},
 		startAt: function(pct, animated){
 			this.each(function(i, el){
@@ -145,6 +131,7 @@ version:	1.0.0
 					follow2.css('width', (px[1]+knobWidth/4)+'px');
 				}
 			});
+			return this;
 		},
 		init: function(options){
 			this.each(function(i, el){
@@ -183,15 +170,11 @@ version:	1.0.0
 					'pill'			: true,
 					'snap'			: {
 						'marks'		: false,
-						'hard'		: false,
-						'onlyOnDrop': false,
+						'type'		: false,
 						'points'	: 0
 					},
 					'disabled'		: false,
-					// 'colorShift'	: [],
 					'vertical'		: false,
-					// 'showKnob'		: true,
-					// 'buttons'		: false,
 					'totalRange'	: [0,0],
 					'locked'		: false,
 					'retina'		: true
@@ -199,7 +182,6 @@ version:	1.0.0
 
 				self.removeAttr('style');	// remove user inline styles
 
-				helpers[guid+'-isMobile'] = false;
 				var mEvt		= {
 						'down'	: 'mousedown',
 						'up'	: 'mouseup',
@@ -214,7 +196,7 @@ version:	1.0.0
 					uAgent.match(/iPod/i) ||
 					// uAgent.match(/Windows Phone/i) ||
 					uAgent.match(/BlackBerry/i)){
-					helpers[guid+'-isMobile'] = true;
+					isMobile = true;
 					mEvt.down = 'touchstart'; mEvt.up = 'touchend'; mEvt.move = 'touchmove';
 					if (window.navigator.msPointerEnabled){
 						mEvt.down = 'MSPointerDown'; mEvt.up = 'MSPointerUp'; mEvt.move = 'MSPointerMove';
@@ -235,71 +217,74 @@ version:	1.0.0
 					result_to		= 0,
 					vert			= settings.vertical,
 					markers			= (settings.snap.points > 0 && settings.snap.points <= 9 && settings.snap.marks),
+					snapType		= (settings.snap.type != 'hard' && settings.snap.type != 'soft') ? false : settings.snap.type,
 					knob_bg			= '#333',
-					knob_width		= (!settings.disabled ? '2%' : '0'),
-					knob_height		= 'inherit',
+					knob_width_css	= (!settings.disabled ? '2%' : '0'),
+					knob_height_css	= 'inherit',
 					self_height		= Math.round(settings.height)+'px',
 					r_corners		= settings.pill,
 					imageBln		= (settings.image != 'none' && settings.image !== '' && !settings.disabled),
 					imgLoaded		= false,
 					resize			= false,
-					// keyCtrl			= (self.attr('data-keys') == 'true') ? true : false,
-					// keyCtrlShift	= (self.attr('data-keys') == 'shift') ? true : false,
-					// colorChangeBln	= (settings.colorShift.length > 1) ? true : false,
-					isMobile		= helpers[guid+'-isMobile'],
-					retina			= (window.devicePixelRatio > 1) && settings.retina
+					retina			= (window.devicePixelRatio > 1) && settings.retina,
 					customRange		= (settings.totalRange[0] !== 0 || settings.totalRange[1] !== 0) && settings.totalRange[0] < settings.totalRange[1],
 					isLocked		= settings.locked;
-
-				helpers[guid+'-buttons'] = settings.buttons;
 
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// image handling
 
 				if (imageBln){	// if image
-					img = settings.image;
+					var img = settings.image;
 
-					// string ir array
-					var multiImageBln = false;
-					if (img instanceof Array){
-						multiImageBln = true;
-					}
+					// string or array
+					var multiImageBln = (img instanceof Array) ? true : false;
 
-					// retina handling
-					/*if (retina){
-						var rImgTemp = img.split('.');
+					var processRetinaImage = function(file){
+						var rImgTemp = file.split('.');
 						var rImgTemp_length = rImgTemp.length;
 
 						rImgTemp[rImgTemp_length-2] = rImgTemp[rImgTemp_length-2] + '@2x';
-						img = '';
+						file = '';
 						for (var i = 0; i < rImgTemp_length; i++){
-							img += rImgTemp[i] + ((i < rImgTemp_length-1) ? '.' : '');
+							file += rImgTemp[i] + ((i < rImgTemp_length-1) ? '.' : '');
 						}
-					}*/
+
+						return file;
+					};
 
 					if (multiImageBln){
+						// patch: conflict with multiple sliders
+						var img = $.extend([], img);
+
+						// retina handling
+						if (retina){
+							img[0] = processRetinaImage(img[0]);
+							img[1] = processRetinaImage(img[1]);
+						}
+
 						knobs.html('<img src="" style="visibility:hidden; position:absolute" />');
-						var newImage = new Image();
+						var newImage = null;
 						var multiImageIndex = 0;
 						var loadNextImage = function(el){
 							newImage = el.find('img');
 							newImage.attr('src', img[multiImageIndex]).load(function(){
 
-
+								var thisHeight = newImage[0].naturalHeight;
 
 								if (retina){
-									newImage[0].style.width = (newImage[0].offsetWidth / 2) + 'px';
-									// newImage.style.height = (newImage.offsetHeight / 2) + 'px';
+									newImage.width(newImage[0].naturalWidth/2);
+									thisHeight		= newImage.height();
+									knob_width_css	= newImage.width()+'px';
+									knob_height_css	= thisHeight+'px';
+								} else {
+									knob_width_css	= newImage[0].naturalWidth+'px';
+									knob_height_css	= thisHeight+'px';
 								}
-
-								var thisHeight = newImage[0].naturalHeight;
-								knob_width = newImage[0].naturalWidth+'px';
-								knob_height = thisHeight+'px';
 
 								knob_bg = 'url('+img[multiImageIndex]+') no-repeat';
 								var knob_bg_styles = {
-									'width': knob_width,
-									'height': knob_height,
+									'width': knob_width_css,
+									'height': knob_height_css,
 									'background': knob_bg
 								};
 								if (retina) knob_bg_styles['background-size'] = '100%';
@@ -313,91 +298,80 @@ version:	1.0.0
 									loadNextImage(knob2);
 								} else {
 									follows.css({
-										'height': knob_height,
-										'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0px'
+										'height': knob_height_css,
+										'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0'
 									});
 									self.css({
-										'height': knob_height,
-										'border-radius': r_corners ? thisHeight / 2 + 'px' : '0px'
+										'height': knob_height_css,
+										'border-radius': r_corners ? thisHeight / 2 + 'px' : '0'
 									});
 
 									imgLoaded = true;
 
-									if (thisHeight > settings.height){
-										var knobMarginValue = 0;
-										knobMarginValue = (thisHeight-settings.height)/2;
-										self.css('height', settings.height+'px');
+									var settings_height = settings.height;
+									if (thisHeight > settings_height){
+										var knobMarginValue = (thisHeight-settings_height)/2;
+										self.css('height', settings_height+'px');
 										knobs.css('top', '-'+knobMarginValue+'px');
 										follows.css({
-											'height': settings.height+'px',
-											'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0px'
+											'height': settings_height+'px',
+											'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0'
 										});
 									} else {
 										// children stay inside parent
 										self.css('overflow', 'hidden');
-
-										// adjust color shifter height
-										follows.find('div').css('height', knob_height);
 									}
 								}
-
-
 							});
 						};
 						loadNextImage(knob1);
 					} else {
 						knobs.html('<img src="'+img+'" style="visibility:hidden; position:absolute" />');
-					
+
+						// retina handling
+						if (retina) img = processRetinaImage(img);
+
 						knobs.children('img').load(function(){
 							imgLoaded = true;
 
 							var imgEl = $(this);
-
-							if (retina){
-								imgEl[0].style.width = (imgEl[0].offsetWidth / 2) + 'px';
-								// imgEl.style.height = (imgEl.offsetHeight / 2) + 'px';
-							}
-
-							// knobs.css('width', 'auto');
 							var thisHeight = imgEl[0].naturalHeight;
-							knob_width = imgEl[0].naturalWidth+'px';
-							knob_height = thisHeight+'px';
+							
+							knob_width_css = imgEl[0].naturalWidth+'px';
+							knob_height_css = thisHeight+'px';
 
 							knob_bg = 'url('+img+') no-repeat';
 							var knob_bg_styles = {
-								'width': knob_width,
-								'height': knob_height,
+								'width': knob_width_css,
+								'height': knob_height_css,
 								'background': knob_bg
 							};
 							if (retina) knob_bg_styles['background-size'] = '100%';
 
 							knobs.css(knob_bg_styles);
 							follows.css({
-								'height': knob_height,
-								'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0px'
+								'height': knob_height_css,
+								'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0'
 							});
 							self.css({
-								'height': knob_height,
-								'border-radius': r_corners ? thisHeight / 2 + 'px' : '0px'
+								'height': knob_height_css,
+								'border-radius': r_corners ? thisHeight / 2 + 'px' : '0'
 							});
 
 							imgEl.remove();
 
-							if (thisHeight > settings.height){
-								var knobMarginValue = 0;
-								knobMarginValue = (thisHeight-settings.height)/2;
-								self.css('height', settings.height+'px');
+							var settings_height = settings.height;
+							if (thisHeight > settings_height){
+								var knobMarginValue = (thisHeight-settings_height)/2;
+								self.css('height', settings_height+'px');
 								knobs.css('top', '-'+knobMarginValue+'px');
 								follows.css({
-									'height': settings.height+'px',
-									'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0px'
+									'height': settings_height+'px',
+									'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0'
 								});
 							} else {
 								// children stay inside parent
 								self.css('overflow', 'hidden');
-
-								// adjust color shifter height
-								follows.find('div').css('height', knob_height);
 							}
 						});
 					}
@@ -423,7 +397,6 @@ version:	1.0.0
 					'text-align': 'left',
 					'margin': 'auto',
 					'z-index': '997',
-					'cursor': 'default',
 					'position': 'relative',
 					'-webkit-touch-callout': 'none'
 				});
@@ -459,9 +432,9 @@ version:	1.0.0
 				self.css(cssContentBox).css(cssUserSelect);
 
 				knobs.css({
-					'width': knob_width,
+					'width': knob_width_css,
 					'background': knob_bg,
-					'height': knob_height,
+					'height': knob_height_css,
 					'display': (!settings.disabled ? 'inline-block' : 'none'),
 					'font-size': '0',
 					'cursor': (!settings.disabled ? 'pointer' : 'default'),
@@ -478,7 +451,7 @@ version:	1.0.0
 				follow1.css('z-index', '1');
 
 				//------------------------------------------------------------------------------------------------------------------------------------
-				// snap marks, buttons, vertical
+				// snap marks, vertical
 
 				// snap to
 				var snapping_on = false;
@@ -562,108 +535,6 @@ version:	1.0.0
 					}
 				};
 
-				// -----------
-
-				// buttons
-				/*var drawButtons = function(){
-					knob_adjust = knobs.width() / self_width * 50;
-
-					var vertStyles	= '; z-index:1000; position:relative; top:30px',
-						plusStr		= '<div class="sglide-buttons" id="'+guid+'_plus" style="display:inline-block; cursor:pointer'+(vert ? vertStyles : '')+'">&nbsp;+&nbsp;</div>',
-						minusStr	= '<div class="sglide-buttons" id="'+guid+'_minus" style="display:inline-block; cursor:pointer'+(vert ? vertStyles : '')+'">&nbsp;&minus;&nbsp;</div>';
-
-					if (markers){
-						if (!vert){
-							self.css('width', 'auto');
-							var a = (vert) ? $('#'+guid+'_vert-marks') : $('#'+guid+', #'+guid+'_markers');
-							a.wrapAll('<div id="'+guid+'_button-marks" style="display:inline-block; vertical-align:middle; width:'+width+unit+'"></div>');
-							var q = $('#'+guid+'_button-marks');
-						} else {
-							var q = $('#'+guid+'_vert-marks');
-						}
-
-						q.after(plusStr);
-						q.before(minusStr);
-					} else {
-						self.css({
-							'display': (!vert) ? 'inline-block' : 'block',
-							'vertical-align': 'middle'
-						});
-
-						self.after(plusStr);
-						self.before(minusStr);
-					}
-
-					var plusBtn		= $('#'+guid+'_plus'),
-						minusBtn	= $('#'+guid+'_minus');
-
-					minusBtn.css(cssUserSelect);
-					plusBtn.css(cssUserSelect);
-
-					if (!settings.disabled){
-						plusBtn.on(mEvt.down, function(){
-							btn_is_down = true;
-							btnTriggers('>');
-							btn_timers = setTimeout(function(){
-								btnHold('>');
-							}, 500);
-						}).on(mEvt.up, btnClearAction);
-
-						minusBtn.on(mEvt.down, function(){
-							btn_is_down = true;
-							btnTriggers('<');
-							btn_timers = setTimeout(function(){
-								btnHold('<');
-							}, 500);
-						}).on(mEvt.up, btnClearAction);
-					}
-				}, btnTriggers = function(direction, smoothBln){
-					var knobWidth = knobs.width();
-					var set_value = THE_VALUE = valueObj[guid];
-					if (btn_snap){
-						var intvl = 100 / (settings.snap.points - 1);
-						var p = intvl;
-						for (var i = 0; i < settings.snap.points; i++){
-							if (intvl >= THE_VALUE){
-								if (direction == '>')	THE_VALUE = (Math.round(intvl) > Math.round(THE_VALUE) ? intvl : intvl+p);
-								else					THE_VALUE = intvl-p;
-								break;
-							} else intvl += p;
-						}
-					} else {
-						if (direction == '>')	THE_VALUE+=(smoothBln ? 1 : 10);
-						else					THE_VALUE-=(smoothBln ? 1 : 10);
-					}
-
-					set_value = THE_VALUE;	// leave THE_VALUE out of visual adjustments
-
-					// constraints
-					if ((THE_VALUE+knob_adjust) > 100)	{ THE_VALUE = 100; set_value = 100; }
-					else if (THE_VALUE-knob_adjust < 0)	{ THE_VALUE = 0; set_value = 0; }
-
-					// set pixel positions
-					var px = (self_width - knobWidth) * set_value / 100 + (knobWidth / 2);
-					var pxAdjust = px - knobWidth / 2;
-
-					// gui
-					knobs.css('left', pxAdjust+'px');
-					follows.css('width', px+'px');
-					if (colorChangeBln) colorChange(set_value);
-
-					// output
-					if (options.onButton) options.onButton({'id':guid, 'value':THE_VALUE, 'el':self});
-					valueObj[guid] = THE_VALUE;
-				}, btnHold = function(dir){
-					var btnHold_timer = setInterval(function(){
-						if (btn_is_down) btnTriggers(dir, (btn_snap ? false : true));
-						else clearInterval(btnHold_timer);
-					}, (btn_snap ? 201 : 10));
-				}, btnClearAction = function(){
-					btn_is_down = false;
-					clearTimeout(btn_timers);
-				}, knob_adjust = 0, btn_is_down = false, btn_timers = null;
-				var btn_snap = (settings.snap.points > 0 && settings.snap.points <= 9 && (settings.snap.hard || settings.snap.onlyOnDrop));*/
-
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// events
 
@@ -683,61 +554,87 @@ version:	1.0.0
 				var storedSnapValues = ['a-1', 'b-1'];
 				var doSnap = function(kind, m){
 					if (snaps > 0 && snaps < 10){	// min 1, max 9
-						var knobWidth = target.width()*2;
-						// var pctFive = self_width / 20 + 10;
-						var pctFive = self_width * (10-snaps) / 100 - 2 + snaps-snaps/2;
+						// if (target[0] === knob1[0]) m += target.width()/4;
+
+						var knobWidthHalf		= target.width();
+						var knobWidth			= knobWidthHalf * 2;
+						var knobWidthQuarter	= knobWidthHalf / 2;
+						var pctFive				= self_width * (10-snaps) / 100 - 2;// + snaps-snaps/2;
+
+						// var knobWidthHalf		= target.offsetWidth;
+						// var knobWidth			= knobWidthHalf * 2;
+						// var knobWidthQuarter	= knobWidthHalf / 2;
+						// var pctFive				= self_width * (10-snaps) / 100 - 2;
 
 						// % to px
 						var snapPixelValues = [];
-						for (var i = 0; i < snapPctValues.length; i++){
+						for (var i = 0; i < snapPctValues.length; i++)
 							snapPixelValues.push((self_width - knobWidth) * snapPctValues[i] / 100);
-							// snapPixelValues.push(snapValues[i] - knobWidth*i);
-						}
 
 						// get closest px mark, and set %
 						var closest = null, pctVal = 0;
 						$.each(snapPixelValues, function(i){
 							if (closest === null || Math.abs(this - m) < Math.abs(closest - m)){
-								closest = this;
+								closest = this | 0;
 								pctVal = snapPctValues[i];
 							}
 						});
 
-						// physically snap it
-						if (kind == 'drag'){
-							if (settings.snap.hard){
-								updateSnap(closest, knobWidth);
+						// if locked, get closest mark for other knob
+						if (isLocked){
+							var closest_n = null, pctVal_n = 0, n = 0;
 
-								if (target[0] === knob1[0]){
-									// updateSnap(knob1, follow1, closest, (closest+knobWidth/4));
-									doOnSnap(closest, pctVal, 'from');
-								} else {
-									// updateSnap(knob2, follow2, closest, (closest+knobWidth/4+knobWidth/2));
-									doOnSnap(closest, pctVal, 'to');
+							if (target[0] === knob1[0]) n = m + lockedDiff-target.width()*0.75; else n = m - lockedDiff;
+
+							$.each(snapPixelValues, function(i){
+								if (closest_n === null || Math.abs(this - n) < Math.abs(closest_n - n)){
+									closest_n = this | 0;
+									pctVal_n = snapPctValues[i];
 								}
-							} else {
-								if (Math.round(Math.abs(closest - m + target.width()/2)) < pctFive){
-									updateSnap(closest, knobWidth);
+							});
+						}
 
-									if (target[0] === knob1[0]){
-										// updateSnap(knob1, follow1, closest, (closest+knobWidth/4));
-										doOnSnap(closest, pctVal, 'from');
-									} else {
-										// updateSnap(knob2, follow2, closest, (closest+knobWidth/4+knobWidth/2));
-										doOnSnap(closest, pctVal, 'to');
-									}
+						// ----------------------------------------------------
+						// physically snap it
+
+						var boolN = false;
+						var lockedRangeAdjusts = function(){
+							// first compare which is closer: m or n
+							// if n, m = n, closest = closest_n
+							// if locked & startAts different
+							if (isLocked && settings.startAt[0] !== settings.startAt[1]){
+								// snap other, else snap current knob
+								if (Math.abs(closest - m) > Math.abs(closest_n - n)){
+									boolN = true;
+									closest = closest_n;
+									m = (target[0] === knob1[0]) ? n-knobWidthQuarter : n;
+								} else {
+									m = (target[0] === knob2[0]) ? m-knobWidthQuarter : m;
+								}
+							} else if (!isLocked && target[0] === knob2[0]) m -= knobWidthHalf;	// knob2 adjust
+						};
+
+						if (kind == 'drag'){
+							if (snapType == 'hard'){
+								updateSnap(closest, knobWidth);
+								doOnSnap(closest, pctVal, ((target[0] === knob1[0]) ? 'from' : 'to'));
+
+							} else {
+								lockedRangeAdjusts();
+
+								if (Math.round(Math.abs(closest - m + knobWidthHalf/8)) < pctFive){
+									updateSnap(closest, knobWidth, false, boolN);
+									doOnSnap(closest, pctVal, ((target[0] === knob1[0]) ? 'from' : 'to'));
+
 								} else storedSnapValues = ['a-1', 'b-1'];
 							}
 						} else if (kind == 'hard'){
-							// if (target[0] === knob1[0])	updateSnap(knob1, follow1, closest, (closest+knobWidth/4));
-							// else						updateSnap(knob2, follow2, closest, (closest+knobWidth/4+knobWidth/2));
-
-							updateSnap(closest, knobWidth);
+							lockedRangeAdjusts();
+							updateSnap(closest, knobWidth, false, boolN);
 							return closest;
 						} else {
-							// if (target[0] === knob1[0])	updateSnap(knob1, follow1, closest, (closest+knobWidth/4), true);
-							// else						updateSnap(knob2, follow2, closest, (closest+knobWidth/4+knobWidth/2), true);
-							updateSnap(closest, knobWidth, true)
+							lockedRangeAdjusts();
+							updateSnap(closest, knobWidth, true, boolN);
 							return closest;
 						}
 					}
@@ -764,11 +661,33 @@ version:	1.0.0
 						options.onSnap(snapObj);
 					}
 				// }, updateSnap = function(knb, fllw, knobPos, followPos, animateBln){
-				}, updateSnap = function(closest, knobWidth, animateBln){
-					var followPos = (closest+knobWidth/4+knobWidth/2);
+				}, updateSnap = function(closest, knobWidth, animateBln, isN){
+					var getFollowPos = function(){
+						return (closest+knobWidth/4+knobWidth/2);
+					};
+					
+					followPos = getFollowPos();
+
+					var patchConstraintLeft = function(){
+						// patch: constraint left: if new knob1 pos < 0, set new closest value;
+						if (isLocked && (closest-lockedDiff+knobWidth/2) <= 0){
+							closest -= closest-lockedDiff+knobWidth/2;
+							followPos = getFollowPos();
+						}
+					};
+					var patchConstraintRight = function(){
+						// patch: contraint right: if new knob2 pos > end knob2 pos, set new closest value;
+						if (isLocked && (closest+lockedDiff-knobWidth/2) > (self_width - knobWidth)){
+							closest -= (closest+lockedDiff-knobWidth/2) - (self_width - knobWidth);
+						}
+					};
+
+					// -----------------------------
 
 					if (!animateBln){
-						if (target[0] === knob1[0]){
+						if ((target[0] === knob1[0] && !isN) || (target[0] === knob2[0] && isN)){
+							patchConstraintRight();
+
 							knob1[0].style.left		= closest+'px';
 							follow1[0].style.width	= (closest+knobWidth/4)+'px';
 
@@ -777,6 +696,8 @@ version:	1.0.0
 								follow2[0].style.width	= (closest+knobWidth/4+lockedDiff)+'px';
 							}
 						} else {
+							patchConstraintLeft();
+
 							knob2[0].style.left		= closest+'px';
 							follow2[0].style.width	= followPos+'px';
 
@@ -786,12 +707,26 @@ version:	1.0.0
 							}
 						}
 					} else {
-						if (target[0] === knob1[0]){
-							knob1.animate({'left': knobPos+'px'}, 'fast');
+						if ((target[0] === knob1[0] && !isN) || (target[0] === knob2[0] && isN)){
+							patchConstraintRight();
+
+							knob1.animate({'left': closest+'px'}, 'fast');
 							follow1.animate({'width': (closest+knobWidth/4)+'px'}, 'fast');
+
+							if (isLocked){
+								knob2.animate({'left': (closest+lockedDiff-knobWidth/2)+'px'}, 'fast');
+								follow2.animate({'width': (closest+knobWidth/4+lockedDiff)+'px'}, 'fast');
+							}
 						} else {
-							knob2.animate({'left': knobPos+'px'}, 'fast');
+							patchConstraintLeft();
+
+							knob2.animate({'left': closest+'px'}, 'fast');
 							follow2.animate({'width': followPos+'px'}, 'fast');
+
+							if (isLocked){
+								knob1.animate({'left': (closest-lockedDiff+knobWidth/2)+'px'}, 'fast');
+								follow1.animate({'width': (followPos-lockedDiff)+'px'}, 'fast');
+							}
 						}
 					}
 				};
@@ -800,43 +735,6 @@ version:	1.0.0
 					self.sGlideRange('startAt', valueObj[guid]);
 					if (markers) drawSnapmarks(true);
 				};
-
-				/*if (!isMobile && (keyCtrl || keyCtrlShift)){
-					var keycode, keydown = false,
-						codeBack	= (vert) ? 40 : 37,
-						codeFwd		= (vert) ? 38 : 39;
-
-					$(document).on('keydown.'+guid, function(e){
-						if (!keydown && !settings.disabled){
-							if (window.event){
-								keycode = window.event.keyCode;
-								if (keyCtrlShift && !window.event.shiftKey) return false;
-							} else if (e){
-								keycode = e.which;
-								if (keyCtrlShift && !e.shiftKey) return false;
-							}
-
-							if (keycode == codeBack){
-								btn_is_down = true;
-								btnTriggers('<');
-								btn_timers = setTimeout(function(){
-									btnHold('<');
-								}, 500);
-								keydown = true;
-							} else if (keycode == codeFwd){
-								btn_is_down = true;
-								btnTriggers('>');
-								btn_timers = setTimeout(function(){
-									btnHold('>');
-								}, 500);
-								keydown = true;
-							}
-						}
-					}).on('keyup.'+guid, function(){
-						keydown = false;
-						btnClearAction();
-					});
-				}*/
 
 				if (isMobile){
 					$(document).on(mEvt.down+'.'+guid, function(e){
@@ -880,107 +778,91 @@ version:	1.0.0
 					// if(event.preventDefault) event.preventDefault();
 					if (e.returnValue) e.returnValue = false;
 
-					// constraint & position
-					/*if (x <= stopper && target[0] === knob1[0]){
-						target.css('left', '0px');
-						follows.css('width', stopper+'px');
-					} else if (x >= self_width-stopper && target[0] === knob2[0]){
-						target.css('left', (self_width-knobWidth)+'px');
-						follows.css('width', (self_width-stopper)+'px');
+					var targetEl	= target[0],
+						knob1El		= knob1[0],
+						knob2El		= knob2[0],
+						follow1El	= follow1[0],
+						follow2El	= follow2[0];
+
+					if (!isLocked){
+						if (targetEl === knob1El){
+							var knob2_style_left	= knob2El.style.left;
+							var knob2_offset_left	= knob2El.offsetLeft;
+
+							if (x <= stopper){
+								targetEl.style.left = '0';
+								follow1El.style.width = stopper+'px';
+							} else if (x >= knob2_offset_left-stopper){
+								targetEl.style.left = knob2_style_left;
+								follow1El.style.width = (knob2_offset_left-stopper)+'px';
+							} else {
+								targetEl.style.left = (x-stopper)+'px';
+								follow1El.style.width = x+'px';
+								if (!snapType || snapType == 'hard') doSnap('drag', m);
+							}
+						} else if (targetEl === knob2El){
+							var knob1_style_left	= knob1El.style.left;
+							var knob1_offset_left	= knob1El.offsetLeft;
+
+							if (x <= knob1_offset_left+stopper+knobWidth){
+								targetEl.style.left = knob1_style_left;
+								follow2El.style.width = (knob1_offset_left+stopper+knobWidth)+'px';
+							} else if (x >= self_width-stopper){
+								targetEl.style.left = (self_width-knobWidth*2)+'px';
+								follow2El.style.width = (self_width-stopper)+'px';
+							} else {
+								targetEl.style.left = (x-stopper-knobWidth)+'px';
+								follow2El.style.width = x+'px';
+								if (!snapType || snapType == 'hard') doSnap('drag', m);
+							}
+						}
 					} else {
-						target.css('left', (x-stopper)+'px');
-						follows.css('width', x+'px');
-						if (!settings.snap.onlyOnDrop) doSnap('drag', m);
-					}*/
-				if (!isLocked){
-					if (target[0] === knob1[0]){
-						var knob2_style_left	= knob2[0].style.left;
-						var knob2_offset_left	= knob2[0].offsetLeft;
+						if (targetEl === knob1El){
+							if (x <= stopper){
+								targetEl.style.left = '0';
+								follow1El.style.width = stopper+'px';
 
-						if (x <= stopper){
-							target.css('left', '0px');
-							follow1.css('width', stopper+'px');
-						} else if (x >= knob2_offset_left-stopper){
-							target.css('left', knob2_style_left);
-							follow1.css('width', (knob2_offset_left-stopper)+'px');
-						} else {
-							target.css('left', (x-stopper)+'px');
-							follow1.css('width', x+'px');
-							if (!settings.snap.onlyOnDrop) doSnap('drag', m);
-						}
-					} else if (target[0] === knob2[0]){
-						var knob1_style_left	= knob1[0].style.left;
-						var knob1_offset_left	= knob1[0].offsetLeft;
+								knob2El.style.left = (lockedDiff-knobWidth)+'px';
+								follow2El.style.width = (lockedDiff+stopper)+'px';
+							} else if (x >= self_width-lockedDiff-stopper){
+								knob2El.style.left = (self_width-knobWidth*2)+'px';
+								follow2El.style.width = (self_width-stopper)+'px';
 
-						if (x <= knob1_offset_left+stopper+knobWidth){
-							target.css('left', knob1_style_left);
-							follow2.css('width', (knob1_offset_left+stopper+knobWidth)+'px');
-						} else if (x >= self_width-stopper){
-							target.css('left', (self_width-knobWidth*2)+'px');
-							follow2.css('width', (self_width-stopper)+'px');
-						} else {
-							target.css('left', (x-stopper-knobWidth)+'px');
-							follow2.css('width', x+'px');
-							if (!settings.snap.onlyOnDrop) doSnap('drag', m);
-						}
-					}
-				} else {
-					var knob2_style_left	= knob2[0].style.left;
-					var knob2_offset_left	= knob2[0].offsetLeft;
-					
-					var knob1_style_left	= knob1[0].style.left;
-					var knob1_offset_left	= knob1[0].offsetLeft;
+								targetEl.style.left = (self_width-lockedDiff-knobWidth)+'px';
+								follow1El.style.width = (self_width-lockedDiff-stopper)+'px';
+							} else {
+								targetEl.style.left = (x-stopper)+'px';
+								follow1El.style.width = x+'px';
 
-					if (target[0] === knob1[0]){
-						if (x <= stopper){
-							target.css('left', '0px');
-							follow1.css('width', stopper+'px');
+								knob2El.style.left = (x-stopper-knobWidth+lockedDiff)+'px';
+								follow2El.style.width = (x+lockedDiff)+'px';
+								if (!snapType || snapType == 'hard') doSnap('drag', m);
+							}
+						} else if (targetEl === knob2El){
+							if (x <= lockedDiff+stopper){
+								targetEl.style.left = (lockedDiff-knobWidth)+'px';
+								follow2El.style.width = (lockedDiff+stopper)+'px';
 
-							knob2.css('left', (lockedDiff-knobWidth)+'px');
-							follow2.css('width', (lockedDiff+stopper)+'px');
-						} else if (x >= self_width-lockedDiff-stopper){
-							knob2.css('left', (self_width-knobWidth*2)+'px');
-							follow2.css('width', (self_width-stopper)+'px');
+								knob1El.style.left = '0';
+								follow1El.style.width = stopper+'px';
+							} else if (x >= self_width-stopper){
+								targetEl.style.left = (self_width-knobWidth*2)+'px';
+								follow2El.style.width = (self_width-stopper)+'px';
 
-							target.css('left', (self_width-lockedDiff-knobWidth)+'px');
-							follow1.css('width', (self_width-lockedDiff-stopper)+'px');
-						} else {
-							target.css('left', (x-stopper)+'px');
-							follow1.css('width', x+'px');
+								knob1El.style.left = (self_width-lockedDiff-knobWidth)+'px';
+								follow1El.style.width = (self_width-lockedDiff-stopper)+'px';
+							} else {
+								targetEl.style.left = (x-stopper-knobWidth)+'px';
+								follow2El.style.width = x+'px';
 
-							knob2.css('left', (x-stopper-knobWidth+lockedDiff)+'px');
-							follow2.css('width', (x+lockedDiff)+'px');
-							if (!settings.snap.onlyOnDrop) doSnap('drag', m);
-						}
-					} else if (target[0] === knob2[0]){
-						if (x <= lockedDiff+stopper){
-							target.css('left', (lockedDiff-knobWidth)+'px');
-							follow2.css('width', (lockedDiff+stopper)+'px');
-
-							knob1.css('left', '0px');
-							follow1.css('width', stopper+'px');
-						} else if (x >= self_width-stopper){
-							target.css('left', (self_width-knobWidth*2)+'px');
-							follow2.css('width', (self_width-stopper)+'px');
-
-							knob1.css('left', (self_width-lockedDiff-knobWidth)+'px');
-							follow1.css('width', (self_width-lockedDiff-stopper)+'px');
-						} else {
-							target.css('left', (x-stopper-knobWidth)+'px');
-							follow2.css('width', x+'px');
-
-							knob1.css('left', (x-stopper-lockedDiff)+'px');
-							follow1.css('width', (x-lockedDiff)+'px');
-							if (!settings.snap.onlyOnDrop) doSnap('drag', m);
+								knob1El.style.left = (x-stopper-lockedDiff)+'px';
+								follow1El.style.width = (x-lockedDiff)+'px';
+								if (!snapType || snapType == 'hard') doSnap('drag', m);
+							}
 						}
 					}
-				}
 
 					// results
-					/*result_from	= knob1[0].style.left || '0px';
-					result_from	= result_from.replace('px', '');
-					result_to	= knob2[0].style.left || '0px';
-					result_to	= result_to.replace('px', '');*/
 					setResults();
 
 					var state = self.data('state');
@@ -989,9 +871,6 @@ version:	1.0.0
 					if (options.drag && state == 'active')
 						options.drag(updateME(getPercent(result_from, result_to)));
 
-					// color change
-					// if (colorChangeBln && state == 'active')
-					// 	colorChange(getPercent(result_from, result_to));
 				}).on(mEvt.up+'.'+guid, function(e){
 					var state = self.data('state');
 					is_down = false;
@@ -1009,88 +888,48 @@ version:	1.0.0
 						var m			= x - stopper;	// true position of knob
 
 						// snap to
-						if (snaps > 0 && snaps < 10 && (settings.snap.onlyOnDrop || settings.snap.hard)){
+						if (snaps > 0 && snaps < 10 && (snapType == 'soft' || snapType == 'hard')){
 							if (target[0] === knob1[0] && m <= knob2[0].offsetLeft)
-								result_from = doSnap((settings.snap.hard) ? 'hard' : 'drop', m);
+								result_from = doSnap((snapType == 'hard') ? 'hard' : 'soft', m);
 							else if (target[0] === knob2[0] && m >= knob1[0].offsetLeft)
-								result_to = doSnap((settings.snap.hard) ? 'hard' : 'drop', m);
-						} //else {
-							// var mm	= knobs.offset().left,	// odd behaviour on vertical
-							/*var mm	= knobs[0].offsetLeft,
-								mq	= self_width - knobWidth;
-
-							// constraint
-							if (mm <= 0){
-								knobs.css('left', '0px');
-								follows.css('width', stopper+'px');
-							} else if (mm >= mq){
-								knobs.css('left', mq+'px');
-								follows.css('width', (self_width-stopper)+'px');
-							}*/
-
-							/*result_from	= knob1[0].style.left || '0px';
-							result_from	= result_from.replace('px', '');
-							result_to	= knob2[0].style.left || '0px';
-							result_to	= result_to.replace('px', '');*/
-						// 	setResults();
-						// }
+								result_to = doSnap((snapType == 'hard') ? 'hard' : 'soft', m);
+						}
 
 						if (options.drop) options.drop(updateME(getPercent(result_from, result_to)));
 						if (options.drag && state == 'active') options.drag(updateME(getPercent(result_from, result_to)));
 						self.data('state', 'inactive');
-
-						// color change
-						// if (colorChangeBln) colorChange(getPercent(result));
 					}
-
-					// if button pressed but released off button, clear button action
-					// if (btn_is_down) btnClearAction();
 				});
-
-				var setResults = function(){
-					result_from	= knob1[0].style.left || '0px';
-					result_from	= result_from.replace('px', '');
-					result_to	= knob2[0].style.left || '0px';
-					result_to	= result_to.replace('px', '');
-				};
 
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// functions
 
-				// locked
+				var setResults = function(){
+					result_from	= knob1[0].style.left || '0';
+					result_from	= result_from.replace('px', '');
+					result_to	= knob2[0].style.left || '0';
+					result_to	= result_to.replace('px', '');
+				};
+
+				// set locked positions
 				if (isLocked){
-					var lockedKnob1Pos = null,
-						lockedKnob2Pos = null,
-						lockedDiff = null,
+					var lockedKnob1Pos	= null,
+						lockedKnob2Pos	= null,
+						lockedDiff		= null,
 						getLockedPositions = function(){
-						lockedKnob1Pos = parseFloat(knob1[0].style.left.replace('px', ''), 10);// + knob_width;
-						lockedKnob2Pos = parseFloat(knob2[0].style.left.replace('px', ''), 10) + knobs.width();
-						lockedDiff = lockedKnob2Pos - lockedKnob1Pos;
+						lockedKnob1Pos	= parseFloat(knob1[0].style.left.replace('px', ''), 10);// + knob_width_css;
+						lockedKnob2Pos	= parseFloat(knob2[0].style.left.replace('px', ''), 10) + knob1.width();
+						lockedDiff		= lockedKnob2Pos - lockedKnob1Pos;
 					};
 				}
-
-				/*var getPercent = function(a, b){
-					var o = null, pcts = [];
-					valueObj[guid] = [];
-
-					for (var i = 0; i < getPercent.arguments.length; i++){
-						o = parseFloat(getPercent.arguments[i], 10);
-						// calculate percentage
-						pcts.push(o / (self_width - (target.width() * 2)) * 100);
-					}
-
-					valueObj[guid] = pcts;
-					return pcts;
-				};*/
 
 				if (customRange){
 					var cstmStart = settings.totalRange[0];
 					var diff = settings.totalRange[1] - cstmStart;
 				}
-				var sendData = {'percentRange': null};
+				var sendData = {};
 				var getPercent = function(a, b){
 					var o = null, pcts = [], cstm = [], p = 0;
-					valueObj[guid] = [];
 
 					for (var i = 0; i < getPercent.arguments.length; i++){
 						o = parseFloat(getPercent.arguments[i], 10);
@@ -1109,61 +948,10 @@ version:	1.0.0
 				};
 
 				var updateME = function(o){
-					// if (self.data('state') == 'active'){
-						o.id = guid;
-						o.el = self;
-						return o;
-						// return {'id':guid, 'from':o[0], 'to': o[1], 'el':self};
-					// }
+					o.id = guid;
+					o.el = self;
+					return o;
 				};
-
-				// color change
-				/*var colorShiftInit = function(){
-					var selfHeightHalf = self.offsetHeight / 2;
-					var borderRadius = 'border-radius: '+(r_corners ? selfHeightHalf + 'px 0 0 ' + selfHeightHalf + 'px' : '0px');
-					follows.css({
-						'overflow': 'hidden',
-						'background-color': settings.colorShift[0]
-					});
-
-					follows.html('<div style="opacity:'+(settings.startAt/100)+'; height:100%; background-color:'+settings.colorShift[1]+'; "></div>');
-				}
-				var colorChange = function(o){
-					// follows.find('div').css('opacity', ''+(o/100));
-					follow[0].childNodes[0].style.opacity = o / 100;
-				};
-
-				// bar
-				var eventBarMouseDown = function(e){
-					e = e || event;	// ie fix
-					e.stopPropagation();
-					e.preventDefault();
-					if (e.returnValue) e.returnValue = false;	// wp
-
-					is_down = true;
-					self.data('state', 'active');
-
-					if (!isMobile && !settings.snap.onlyOnDrop){
-						var x = null;
-						if (vert){
-							var base = self.position().top + self.width();
-							x = base - (e.pageY-2);
-						} else x = e.pageX - self.offset().left;
-						var m = x - (knobs.width() / 2);	// true position of knob
-
-						knobs.css('left', m+'px');
-						follows.css('width', m+(knobs.width()/2)+'px');
-						
-						// constraint
-						if (m < 0) knobs.css('left', '0px');
-						else if (m >= self.width()-knobs.width()) knobs.css('left', self.width()-knobs.width()+'px');
-					}
-				};
-
-				if (!settings.disabled){
-					self.on(mEvt.down, eventBarMouseDown);
-					follows.on(mEvt.down, eventBarMouseDown);
-				}*/
 
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// start
@@ -1183,11 +971,6 @@ version:	1.0.0
 					// inits
 					if (snaps > 0 && snaps < 10) drawSnapmarks();
 					if (vert) verticalTransform();
-					// if (helpers[guid+'-buttons']) drawButtons();
-					/*if (colorChangeBln){
-						colorShiftInit();
-						colorChange(startAt);
-					}*/
 					if (isLocked) getLockedPositions();
 				};
 
