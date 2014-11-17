@@ -68,13 +68,6 @@ version:	1.0.0
 
 				if (isMobile){
 					mEvt.down = 'touchstart'; mEvt.up = 'touchend'; mEvt.move = 'touchmove';
-				// windows phone touch events
-				} else if (window.navigator.msPointerEnabled){
-					$(document).off(mEvt.msup, eventDocumentMouseUp);
-					$(document).off(mEvt.msmove, eventDocumentMouseMove);
-					self.off(mEvt.msdown, eventBarMouseDown);
-					self.children('.follow_bar').off(mEvt.msdown, eventBarMouseDown);
-					self.children('.slider_knob').off(mEvt.msdown, eventKnobMouseDown).off(mEvt.msup, eventKnobMouseDown);
 				} else
 					$(document).off('keydown.'+guid).off('keyup.'+guid);
 
@@ -88,7 +81,7 @@ version:	1.0.0
 			return this;
 		},
 		startAt: function(pct, animated){
-			this.each(function(i, el){
+			this.each(function(index, el){
 				var self		= $(el);
 				var knobs		= self.children('.slider_knob'),
 					knob1		= self.children('.s_knob1'),
@@ -205,7 +198,7 @@ version:	1.0.0
 				} else if (uAgent.match(/Windows Phone/i)){
 					if (window.navigator.msPointerEnabled){
 						self.css({'-ms-touch-action': 'none'});
-						mEvt.msdown = 'MSPointerDown'; mEvt.msup = 'MSPointerUp'; mEvt.msmove = 'MSPointerMove';
+						mEvt.down = 'MSPointerDown'; mEvt.up = 'MSPointerUp'; mEvt.move = 'MSPointerMove';
 					} else {
 						mEvt.down = 'touchstart'; mEvt.up = 'touchend'; mEvt.move = 'touchmove';
 					}
@@ -254,7 +247,7 @@ version:	1.0.0
 
 					if (multiImageBln){
 						// patch: conflict with multiple sliders
-						var img = $.extend([], img);
+						img = $.extend([], img);
 
 						// retina handling
 						if (retina){
@@ -306,7 +299,7 @@ version:	1.0.0
 										'border-radius': r_corners ? thisHeight / 2 + 'px' : '0'
 									});
 
-									imgLoaded = true;
+									$(el).trigger(eventMakeReady);
 
 									var settings_height = settings.height;
 									if (thisHeight > settings_height){
@@ -332,8 +325,6 @@ version:	1.0.0
 						if (retina) img = processRetinaImage(img);
 
 						knobs.children('img').load(function(){
-							imgLoaded = true;
-
 							var imgEl = $(this);
 							var thisHeight = imgEl[0].naturalHeight;
 							
@@ -360,6 +351,8 @@ version:	1.0.0
 
 							imgEl.remove();
 
+							$(el).trigger(eventMakeReady);
+
 							var settings_height = settings.height;
 							if (thisHeight > settings_height){
 								var knobMarginValue = (thisHeight-settings_height)/2;
@@ -376,10 +369,13 @@ version:	1.0.0
 						});
 					}
 				} else {
-					imgLoaded = true;
 					var d = settings.height / 2;
 					self.css({'border-radius': (r_corners ? d+'px' : '0'), 'overflow': 'hidden'});
 					follows.css('border-radius', (r_corners ? d+'px 0 0 '+d+'px' : '0'));
+
+					setTimeout(function(){
+						$(el).trigger(eventMakeReady);
+					}, 0);
 				}
 
 				//------------------------------------------------------------------------------------------------------------------------------------
@@ -482,10 +478,11 @@ version:	1.0.0
 
 					// markers
 					if (markers){
+						var marks = null;
 						if (!resize){
 							self.after('<div id="'+guid+'_markers"></div>');
 							
-							var marks = $('#'+guid+'_markers');
+							marks = $('#'+guid+'_markers');
 							
 							marks.css({
 								'width': self_width+'px', //settings.width + unit,
@@ -495,7 +492,7 @@ version:	1.0.0
 								'box-sizing': 'border-box'
 							}).css(cssUserSelect);
 						} else {
-							var marks = $('#'+guid+'_markers');
+							marks = $('#'+guid+'_markers');
 							marks.html('');
 						}
 
@@ -559,12 +556,7 @@ version:	1.0.0
 						var knobWidthHalf		= target.width();
 						var knobWidth			= knobWidthHalf * 2;
 						var knobWidthQuarter	= knobWidthHalf / 2;
-						var pctFive				= self_width * (10-snaps) / 100 - 2;// + snaps-snaps/2;
-
-						// var knobWidthHalf		= target.offsetWidth;
-						// var knobWidth			= knobWidthHalf * 2;
-						// var knobWidthQuarter	= knobWidthHalf / 2;
-						// var pctFive				= self_width * (10-snaps) / 100 - 2;
+						var pctFive				= self_width * (10-snaps) / 100 - 2;
 
 						// % to px
 						var snapPixelValues = [];
@@ -609,7 +601,7 @@ version:	1.0.0
 									closest = closest_n;
 									m = (target[0] === knob1[0]) ? n-knobWidthQuarter : n;
 								} else {
-									m = (target[0] === knob2[0]) ? m-knobWidthQuarter : m;
+									m = (target[0] === knob2[0]) ? m-knobWidthHalf : m;
 								}
 							} else if (!isLocked && target[0] === knob2[0]) m -= knobWidthHalf;	// knob2 adjust
 						};
@@ -654,9 +646,9 @@ version:	1.0.0
 						var snapObj = null;
 
 						if (which == 'to')
-							snapObj = updateME(getPercent((storedSnapValues[0].indexOf('-1') !== -1) ? valueObj[guid][0] : storedSnapValues[0], b));
+							snapObj = updateME(getPercent([(storedSnapValues[0].indexOf('-1') !== -1) ? valueObj[guid][0] : storedSnapValues[0], b]));
 						else
-							snapObj = updateME(getPercent(b, (storedSnapValues[1].indexOf('-1') !== -1) ? valueObj[guid][1] : storedSnapValues[1]));
+							snapObj = updateME(getPercent([b, (storedSnapValues[1].indexOf('-1') !== -1) ? valueObj[guid][1] : storedSnapValues[1]]));
 
 						options.onSnap(snapObj);
 					}
@@ -869,7 +861,7 @@ version:	1.0.0
 
 					// update values
 					if (options.drag && state == 'active')
-						options.drag(updateME(getPercent(result_from, result_to)));
+						options.drag(updateME(getPercent([result_from, result_to])));
 
 				}).on(mEvt.up+'.'+guid, function(e){
 					var state = self.data('state');
@@ -895,8 +887,8 @@ version:	1.0.0
 								result_to = doSnap((snapType == 'hard') ? 'hard' : 'soft', m);
 						}
 
-						if (options.drop) options.drop(updateME(getPercent(result_from, result_to)));
-						if (options.drag && state == 'active') options.drag(updateME(getPercent(result_from, result_to)));
+						if (options.drop) options.drop(updateME(getPercent([result_from, result_to])));
+						if (options.drag && state == 'active') options.drag(updateME(getPercent([result_from, result_to])));
 						self.data('state', 'inactive');
 					}
 				});
@@ -928,11 +920,11 @@ version:	1.0.0
 					var diff = settings.totalRange[1] - cstmStart;
 				}
 				var sendData = {};
-				var getPercent = function(a, b){
+				var getPercent = function(arr){
 					var o = null, pcts = [], cstm = [], p = 0;
 
-					for (var i = 0; i < getPercent.arguments.length; i++){
-						o = parseFloat(getPercent.arguments[i], 10);
+					for (var i = 0; i < arr.length; i++){
+						o = parseFloat(arr[i], 10);
 						// calculate percentage
 						p = o / (self_width - (knob1.width() * 2)) * 100;
 						pcts.push(p);
@@ -956,31 +948,26 @@ version:	1.0.0
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// start
 
-				var setStartAt = function(num){
-					startAt = (num) ? num : settings.startAt;
+				var setStartAt = function(){
+					var num = valueObj[guid];
 
-					self.sGlideRange('startAt', startAt);
-
+					self.sGlideRange('startAt', num);
 					setResults();
 
-					var rlt = updateME(getPercent(result_from, result_to));
+					var rlt = updateME(getPercent([result_from, result_to]));
 					
-					if (options.drop) options.drop(rlt);
-					if (options.drag) options.drag(rlt);
-
 					// inits
-					if (snaps > 0 && snaps < 10) drawSnapmarks();
-					if (vert) verticalTransform();
-					if (isLocked) getLockedPositions();
+					if (snaps > 0 && snaps < 10)	drawSnapmarks();
+					if (vert)						verticalTransform();
+					if (options.onload)				options.onload(rlt);
+					if (isLocked)					getLockedPositions();
+
+					$(el).off('makeready.'+guid, setStartAt);
 				};
 
-				var onload_timer = setInterval(function(){
-					if (imgLoaded){
-						clearInterval(onload_timer);
-						setStartAt(valueObj[guid]);
-						if (options.onload) options.onload();
-					}
-				}, 1);
+				// Listen for image loaded
+				var eventMakeReady = $.Event('makeready.'+guid);
+				$(el).on('makeready.'+guid, setStartAt);
 			});
 		}
 	};

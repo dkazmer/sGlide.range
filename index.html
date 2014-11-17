@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
-<title>sGlide - working</title>
+<title>sGlide.range - working</title>
 
 <link rel="stylesheet" href="main.css" />
 
@@ -20,15 +20,15 @@
 #slider1_vert-marks {margin-left: -60px !important;}
 </style>
 
-<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
-<script type="text/javascript" src="jquery.sglide.range.js"></script>
-<!-- <script type="text/javascript" src="sglide.range.js"></script> -->
+<!-- <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+<script type="text/javascript" src="jquery.sglide.range.js"></script> -->
+<script type="text/javascript" src="sglide.range.js"></script>
 <!-- <script type="text/javascript" src="../../~web~/sGlide/jquery.sglide.2.min.js"></script> -->
 <!-- <script type="text/javascript" src="../../~web~/sGlide/sglide.2.min.js"></script> -->
 
 <script type="text/javascript">
 	function run(){
-		/*sglideArr = [];
+		sglideArr = [];
 		var elsArr = document.getElementsByClassName('slider_bar');
 
 		for (var i = 0; i < elsArr.length; i++) {
@@ -38,7 +38,7 @@
 				'height': 22,
 				'unit': 'px',
 				// 'image': 'img/knob_.png',
-				'image': ['img/knob_.png','img/knob_.png'],
+				// 'image': ['img/knob_.png','img/knob_.png'],
 				// 'image': ['img/images/range_knob_01.png', 'img/images/range_knob_02.png'],
 				'pill': false,
 				'locked': (i === 0) ? true : false,
@@ -57,29 +57,29 @@
 				onSnap: function(o){
 					// console.log('> onSnap',o);//,o.id,o);
 				}
-			}));//.startAt(40*(i+1)));
+			}));
 		}
 
-		console.log('sglideArr',sglideArr);*/
+		console.log('sglideArr',sglideArr);
 
-		$('.slider_bar').sGlideRange({
-			'startAt': [20, 88],
-			'width': 400,
+		/*$('.slider_bar').sGlideRange({
+			'startAt': [25, 88],
+			'width': 600,
 			'height': 22,
 			'unit': 'px',
-			'image': 'img/knob_.png',
+			// 'image': 'img/knob_.png',
 			// 'image': ['img/knob_.png','img/knob_.png'],
 			// 'image': ['img/images/range_knob_01.png', 'img/images/range_knob_02.png'],
 			// 'retina': false,
 			'pill': false,
 			'totalRange': [58,102],
-			// 'locked': true,
+			'locked': true,
 			'snap': {
 				'marks': true,
-				// 'type': 'soft',
+				'type': 'soft',
 				'points': 5
 			},
-			'vertical': true,
+			// 'vertical': true,
 			// 'disabled': true,
 			drag: function(o){
 				// console.log('> drag',o);
@@ -88,7 +88,7 @@
 			onSnap: function(o){
 				console.log('> onSnap',o);//,o.id,o);
 			}
-		});
+		});*/
 	};
 </script>
 
