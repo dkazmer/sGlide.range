@@ -4,10 +4,11 @@
 
 author:		Daniel Kazmer - http://iframework.net
 created:	11.11.2014
-version:	1.0.0
+version:	1.0.1
 
 	version history:
-		1.0.0:	created - born of sGlide
+		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
+		1.0.0	created - born of sGlide
 
 	usage:
 		pass an empty DIV, with a unique id to the following class
@@ -844,121 +845,121 @@ function sGlideRange(self, options){
 		}
 
 		eventDocumentMouseMove = function(e){
-			if (!is_down) return false;
-			e = e || event;	// ie fix
+			if (is_down){
+				e = e || event;	// ie fix
 
-			var x			= null,
-				selfWidth	= self.offsetWidth,
-				knobWidth	= knob1.offsetWidth;
+				var x			= null,
+					selfWidth	= self.offsetWidth,
+					knobWidth	= knob1.offsetWidth;
 
-			if (vert){
-				// MS bug: manually set offsetTop, otherwise try to get the vertical wrapper's offsetTop
-				if (window.navigator.msPointerEnabled && MSoffsetTop === null) MSoffsetTop = self.getBoundingClientRect().top;
-				else if (vmarks !== null && MSoffsetTop === null) MSoffsetTop = vmarks.offsetTop;
+				if (vert){
+					// MS bug: manually set offsetTop, otherwise try to get the vertical wrapper's offsetTop
+					if (window.navigator.msPointerEnabled && MSoffsetTop === null) MSoffsetTop = self.getBoundingClientRect().top;
+					else if (vmarks !== null && MSoffsetTop === null) MSoffsetTop = vmarks.offsetTop;
 
-				var base = (MSoffsetTop !== null ? MSoffsetTop : self.offsetTop) + selfWidth;
-				if (isMobile){
-					touchY = e.targetTouches[0].pageY;
-					x = base - touchY;
-				} else x = base - e.pageY;
-			} else {
-				if (isMobile){
-					touchX = e.targetTouches[0].pageX;
-					x = touchX - self.offsetLeft;
-				} else x = e.pageX - self.offsetLeft;
-			}
+					var base = (MSoffsetTop !== null ? MSoffsetTop : self.offsetTop) + selfWidth;
+					if (isMobile){
+						touchY = e.targetTouches[0].pageY;
+						x = base - touchY;
+					} else x = base - e.pageY;
+				} else {
+					if (isMobile){
+						touchX = e.targetTouches[0].pageX;
+						x = touchX - self.offsetLeft;
+					} else x = e.pageX - self.offsetLeft;
+				}
 
-			var stopper = knobWidth / 2;
-			var m = x - stopper;
+				var stopper = knobWidth / 2;
+				var m = x - stopper;
 
-			if (e.returnValue) e.returnValue = false;
+				if (e.returnValue) e.returnValue = false;
 
-			// constraint
-			if (!isLocked){
-				if (target === knob1){
-					var knob2_style_left	= knob2.style.left;
-					var knob2_offset_left	= knob2.offsetLeft;
+				// constraint
+				if (!isLocked){
+					if (target === knob1){
+						var knob2_style_left	= knob2.style.left;
+						var knob2_offset_left	= knob2.offsetLeft;
 
-					if (x <= stopper){
-						target.style.left = '0';
-						follow1.style.width = stopper+'px';
-					} else if (x >= knob2_offset_left-stopper){
-						target.style.left = knob2_style_left;
-						follow1.style.width = (knob2_offset_left-stopper)+'px';
-					} else {
-						target.style.left = (x-stopper)+'px';
-						follow1.style.width = x+'px';
-						if (!snapType || snapType == 'hard') doSnap('drag', m);
+						if (x <= stopper){
+							target.style.left = '0';
+							follow1.style.width = stopper+'px';
+						} else if (x >= knob2_offset_left-stopper){
+							target.style.left = knob2_style_left;
+							follow1.style.width = (knob2_offset_left-stopper)+'px';
+						} else {
+							target.style.left = (x-stopper)+'px';
+							follow1.style.width = x+'px';
+							if (!snapType || snapType == 'hard') doSnap('drag', m);
+						}
+					} else if (target === knob2){
+						var knob1_style_left	= knob1.style.left;
+						var knob1_offset_left	= knob1.offsetLeft;
+
+						if (x <= knob1_offset_left+stopper+knobWidth){
+							target.style.left = knob1_style_left;
+							follow2.style.width = (knob1_offset_left+stopper+knobWidth)+'px';
+						} else if (x >= self_width-stopper){
+							target.style.left = (self_width-knobWidth*2)+'px';
+							follow2.style.width = (self_width-stopper)+'px';
+						} else {
+							target.style.left = (x-stopper-knobWidth)+'px';
+							follow2.style.width = x+'px';
+							if (!snapType || snapType == 'hard') doSnap('drag', m);
+						}
 					}
-				} else if (target === knob2){
-					var knob1_style_left	= knob1.style.left;
-					var knob1_offset_left	= knob1.offsetLeft;
+				} else {
+					if (target === knob1){
+						if (x <= stopper){
+							target.style.left = '0';
+							follow1.style.width = stopper+'px';
 
-					if (x <= knob1_offset_left+stopper+knobWidth){
-						target.style.left = knob1_style_left;
-						follow2.style.width = (knob1_offset_left+stopper+knobWidth)+'px';
-					} else if (x >= self_width-stopper){
-						target.style.left = (self_width-knobWidth*2)+'px';
-						follow2.style.width = (self_width-stopper)+'px';
-					} else {
-						target.style.left = (x-stopper-knobWidth)+'px';
-						follow2.style.width = x+'px';
-						if (!snapType || snapType == 'hard') doSnap('drag', m);
+							knob2.style.left = (lockedDiff-knobWidth)+'px';
+							follow2.style.width = (lockedDiff+stopper)+'px';
+						} else if (x >= self_width-lockedDiff-stopper){
+							knob2.style.left = (self_width-knobWidth*2)+'px';
+							follow2.style.width = (self_width-stopper)+'px';
+
+							target.style.left = (self_width-lockedDiff-knobWidth)+'px';
+							follow1.style.width = (self_width-lockedDiff-stopper)+'px';
+						} else {
+							target.style.left = (x-stopper)+'px';
+							follow1.style.width = x+'px';
+
+							knob2.style.left = (x-stopper-knobWidth+lockedDiff)+'px';
+							follow2.style.width = (x+lockedDiff)+'px';
+							if (!snapType || snapType == 'hard') doSnap('drag', m);
+						}
+					} else if (target === knob2){
+						if (x <= lockedDiff+stopper){
+							target.style.left = (lockedDiff-knobWidth)+'px';
+							follow2.style.width = (lockedDiff+stopper)+'px';
+
+							knob1.style.left = '0';
+							follow1.style.width = stopper+'px';
+						} else if (x >= self_width-stopper){
+							target.style.left = (self_width-knobWidth*2)+'px';
+							follow2.style.width = (self_width-stopper)+'px';
+
+							knob1.style.left = (self_width-lockedDiff-knobWidth)+'px';
+							follow1.style.width = (self_width-lockedDiff-stopper)+'px';
+						} else {
+							target.style.left = (x-stopper-knobWidth)+'px';
+							follow2.style.width = x+'px';
+
+							knob1.style.left = (x-stopper-lockedDiff)+'px';
+							follow1.style.width = (x-lockedDiff)+'px';
+							if (!snapType || snapType == 'hard') doSnap('drag', m);
+						}
 					}
 				}
-			} else {
-				if (target === knob1){
-					if (x <= stopper){
-						target.style.left = '0';
-						follow1.style.width = stopper+'px';
 
-						knob2.style.left = (lockedDiff-knobWidth)+'px';
-						follow2.style.width = (lockedDiff+stopper)+'px';
-					} else if (x >= self_width-lockedDiff-stopper){
-						knob2.style.left = (self_width-knobWidth*2)+'px';
-						follow2.style.width = (self_width-stopper)+'px';
+				// results
+				setResults();
 
-						target.style.left = (self_width-lockedDiff-knobWidth)+'px';
-						follow1.style.width = (self_width-lockedDiff-stopper)+'px';
-					} else {
-						target.style.left = (x-stopper)+'px';
-						follow1.style.width = x+'px';
-
-						knob2.style.left = (x-stopper-knobWidth+lockedDiff)+'px';
-						follow2.style.width = (x+lockedDiff)+'px';
-						if (!snapType || snapType == 'hard') doSnap('drag', m);
-					}
-				} else if (target === knob2){
-					if (x <= lockedDiff+stopper){
-						target.style.left = (lockedDiff-knobWidth)+'px';
-						follow2.style.width = (lockedDiff+stopper)+'px';
-
-						knob1.style.left = '0';
-						follow1.style.width = stopper+'px';
-					} else if (x >= self_width-stopper){
-						target.style.left = (self_width-knobWidth*2)+'px';
-						follow2.style.width = (self_width-stopper)+'px';
-
-						knob1.style.left = (self_width-lockedDiff-knobWidth)+'px';
-						follow1.style.width = (self_width-lockedDiff-stopper)+'px';
-					} else {
-						target.style.left = (x-stopper-knobWidth)+'px';
-						follow2.style.width = x+'px';
-
-						knob1.style.left = (x-stopper-lockedDiff)+'px';
-						follow1.style.width = (x-lockedDiff)+'px';
-						if (!snapType || snapType == 'hard') doSnap('drag', m);
-					}
-				}
+				// update values
+				if (options.drag && self.getAttribute('data-state') == 'active')
+					options.drag(updateME(getPercent([result_from, result_to])));
 			}
-
-			// results
-			setResults();
-
-			// update values
-			if (options.drag && self.getAttribute('data-state') == 'active')
-				options.drag(updateME(getPercent([result_from, result_to])));
-
 		};
 		eventDocumentMouseUp = function(e){
 			is_down = false;
