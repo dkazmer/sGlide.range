@@ -6,9 +6,9 @@ A derivative of sGlide. Select the range between custom min and max numbers. Ret
 Quickstart Guide: apply the following to an empty DIV with a unique id.
 
 	// jQuery:
-	// $('#slider').sGlide({
+	// $('#slider').sGlideRange({
 	// jQuery independent:
-	var my_sGlide_instance = new sGlide(my_element, {
+	var my_sGlide_instance = new sGlideRange(my_element, {
 		startAt: [20, 60],	// percentages of totalRange
 		width: 600,
 		height: 20,
