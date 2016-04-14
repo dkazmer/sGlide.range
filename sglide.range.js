@@ -290,7 +290,8 @@ function sGlideRange(self, options){
 			'snap'			: {
 				'marks'		: false,
 				'type'		: false,
-				'points'	: 0
+				'points'	: 0,
+				'sensitivity': 2
 			},
 			'disabled'		: false,
 			'vertical'		: false,
@@ -694,82 +695,87 @@ function sGlideRange(self, options){
 		var storedSnapValues = ['a-1', 'b-1'];
 		var doSnap = function(kind, m){
 			if (snaps > 0 && snaps < 10){	// min 1, max 9
-				var knobWidthHalf		= target.offsetWidth;
-				var knobWidth			= knobWidthHalf * 2;
-				var knobWidthQuarter	= knobWidthHalf / 2;
-				var pctFive				= self_width * (10-snaps) / 100 - 2;
+				var sense = settings.snap.sensitivity;
 
-				// % to px
-				var snapPixelValues = [];
-				for (var j = 0; j < snapPctValues.length; j++){
-					snapPixelValues.push((self_width - knobWidth) * snapPctValues[j] / 100);
-				}
+				// although snap is enabled, sensitivity may be set to nill, in which case marks are drawn but won't snap to
+				if (sense || snapType === 'hard' || snapType === 'soft'){
+					var knobWidthHalf		= target.offsetWidth,
+						knobWidth			= knobWidthHalf * 2,
+						knobWidthQuarter	= knobWidthHalf / 2,
+						snapOffset			= (sense && sense > 0 && sense < 4 ? (sense + 1) * 5 : 15) - 3;
 
-				// get closest px mark, and set %
-				var closest = null, pctVal = 0;
-				for (var i = 0; i < snapPixelValues.length; i++) {
-					if (closest === null || Math.abs(snapPixelValues[i] - m) < Math.abs(closest - m)){
-						closest = snapPixelValues[i];
-						pctVal = snapPctValues[i];
+					// % to px
+					var snapPixelValues = [];
+					for (var j = 0; j < snapPctValues.length; j++){
+						snapPixelValues.push((self_width - knobWidth) * snapPctValues[j] / 100);
 					}
-				}
 
-				// if locked, get closest mark for other knob
-				if (isLocked){
-					var closest_n = null, pctVal_n = 0, n = 0;
-
-					if (target === knob1) n = m + lockedDiff-knobWidthHalf*0.75; else n = m - lockedDiff;
-
-					for (i = 0; i < snapPixelValues.length; i++) {
-						if (closest_n === null || Math.abs(snapPixelValues[i] - n) < Math.abs(closest_n - n)){
-							closest_n = snapPixelValues[i];
-							pctVal_n = snapPctValues[i];
+					// get closest px mark, and set %
+					var closest = null, pctVal = 0;
+					for (var i = 0; i < snapPixelValues.length; i++) {
+						if (closest === null || Math.abs(snapPixelValues[i] - m) < Math.abs(closest - m)){
+							closest = snapPixelValues[i];
+							pctVal = snapPctValues[i];
 						}
 					}
-				}
 
-				// ----------------------------------------------------
-				// physically snap it
+					// if locked, get closest mark for other knob
+					if (isLocked){
+						var closest_n = null, pctVal_n = 0, n = 0;
 
-				var boolN = false;
-				var lockedRangeAdjusts = function(){
-					// first compare which is closer: m or n
-					// if n, m = n, closest = closest_n
-					// if locked & startAts different
-					if (isLocked && settings.startAt[0] !== settings.startAt[1]){
-						// snap other, else snap current knob
-						if (Math.abs(closest - m) > Math.abs(closest_n - n)){
-							boolN = true;
-							closest = closest_n;
-							m = (target === knob1) ? n-knobWidthQuarter : n;//+knobWidthQuarter;
-						} else {
-							m = (target === knob2) ? m-knobWidthHalf : m;
+						if (target === knob1) n = m + lockedDiff-knobWidthHalf*0.75; else n = m - lockedDiff;
+
+						for (i = 0; i < snapPixelValues.length; i++) {
+							if (closest_n === null || Math.abs(snapPixelValues[i] - n) < Math.abs(closest_n - n)){
+								closest_n = snapPixelValues[i];
+								pctVal_n = snapPctValues[i];
+							}
 						}
-					} else if (!isLocked && target === knob2) m -= knobWidthHalf;	// knob2 adjust
-				};
+					}
 
-				if (kind == 'drag'){
-					if (snapType == 'hard'){
-						updateSnap(closest, knobWidth);
-						doOnSnap(closest, pctVal, ((target === knob1) ? 'from' : 'to'));
+					// ----------------------------------------------------
+					// physically snap it
 
-					} else {
-						lockedRangeAdjusts();
+					var boolN = false;
+					var lockedRangeAdjusts = function(){
+						// first compare which is closer: m or n
+						// if n, m = n, closest = closest_n
+						// if locked & startAts different
+						if (isLocked && settings.startAt[0] !== settings.startAt[1]){
+							// snap other, else snap current knob
+							if (Math.abs(closest - m) > Math.abs(closest_n - n)){
+								boolN = true;
+								closest = closest_n;
+								m = (target === knob1) ? n-knobWidthQuarter : n;//+knobWidthQuarter;
+							} else {
+								m = (target === knob2) ? m-knobWidthHalf : m;
+							}
+						} else if (!isLocked && target === knob2) m -= knobWidthHalf;	// knob2 adjust
+					};
 
-						if (Math.round(Math.abs(closest - m + knobWidthHalf/8)) < pctFive){
-							updateSnap(closest, knobWidth, false, boolN);
+					if (kind == 'drag'){
+						if (snapType == 'hard'){
+							updateSnap(closest, knobWidth);
 							doOnSnap(closest, pctVal, ((target === knob1) ? 'from' : 'to'));
 
-						} else storedSnapValues = ['a-1', 'b-1'];
+						} else {
+							lockedRangeAdjusts();
+
+							if (Math.round(Math.abs(closest - m + knobWidthHalf/8)) < snapOffset){
+								updateSnap(closest, knobWidth, false, boolN);
+								doOnSnap(closest, pctVal, ((target === knob1) ? 'from' : 'to'));
+
+							} else storedSnapValues = ['a-1', 'b-1'];
+						}
+					} else if (kind == 'hard'){
+						lockedRangeAdjusts();
+						updateSnap(closest, knobWidth, false, boolN);
+						return closest;
+					} else {
+						lockedRangeAdjusts();
+						updateSnap(closest, knobWidth, false, boolN);	// animation not supported
+						return closest;
 					}
-				} else if (kind == 'hard'){
-					lockedRangeAdjusts();
-					updateSnap(closest, knobWidth, false, boolN);
-					return closest;
-				} else {
-					lockedRangeAdjusts();
-					updateSnap(closest, knobWidth, false, boolN);	// animation not supported
-					return closest;
 				}
 			}
 		}, doOnSnap = function(a, b, which){ // callback: onSnap
