@@ -63,7 +63,7 @@
 		console.log('sglideArr',sglideArr);*/
 
 		$('#slider1').sGlideRange({
-			'startAt': [25, 88],
+			'startAt': [25, 58],
 			'width': 600,
 			'height': 22,
 			'unit': 'px',
@@ -76,14 +76,14 @@
 			// 'locked': true,
 			'snap': {
 				'marks': true,
-				// 'type': 'hard',
+				// 'type': 'soft',
 				'points': 5
 				// 'sensitivity': 1
 			},
-			// 'vertical': true,
+			'vertical': true,
 			// 'disabled': true,
 			drag: function(o){
-				// console.log('> drag',o);
+				// console.log('> drag',o.percentRange);
 				// document.getElementById('percent').innerHTML = o.id+': '+Math.round(o.value) + '%';
 			},
 			onSnap: function(o){

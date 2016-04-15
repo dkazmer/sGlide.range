@@ -549,16 +549,18 @@ version:	1.0.1
 					is_down = false;
 				});
 
-				var barDrag = false;
-				follow2.on(mEvt.down, function(e){
-					barDrag = true;
-					target = knobs.eq(1);
-					is_down = true;
-					self.data('state', 'active');
-				}).on(mEvt.up, function(){
-					is_down = false;
-					barDrag = false;
-				});
+				var barDrag = false; console.log('>> snapType', snapType);
+				if (!snapType || isLocked){
+					follow2.on(mEvt.down, function(e){
+						barDrag = true;
+						target = knob2;//knobs.eq(1);
+						is_down = true;
+						self.data('state', 'active');
+					}).on(mEvt.up, function(){
+						is_down = false;
+						barDrag = false;
+					});
+				}
 
 				// snapping
 				var storedSnapValues = ['a-1', 'b-1'];
@@ -588,7 +590,7 @@ version:	1.0.1
 							});
 
 							// if locked, get closest mark for other knob
-							if (isLocked){
+							if (isLocked || barDrag){
 								var closest_n = null, pctVal_n = 0, n = 0;
 
 								if (target[0] === knob1[0]) n = m + lockedDiff-target.width()*0.75; else n = m - lockedDiff;
@@ -609,7 +611,7 @@ version:	1.0.1
 								// first compare which is closer: m or n
 								// if n, m = n, closest = closest_n
 								// if locked & startAts different
-								if (isLocked && settings.startAt[0] !== settings.startAt[1]){
+								if ((isLocked || barDrag) && settings.startAt[0] !== settings.startAt[1]){
 									// snap other, else snap current knob
 									if (Math.abs(closest - m) > Math.abs(closest_n - n)){
 										boolN = true;
@@ -678,14 +680,14 @@ version:	1.0.1
 
 					var patchConstraintLeft = function(){
 						// patch: constraint left: if new knob1 pos < 0, set new closest value;
-						if (isLocked && (closest-lockedDiff+knobWidth/2) <= 0){
+						if ((isLocked || barDrag) && (closest-lockedDiff+knobWidth/2) <= 0){
 							closest -= closest-lockedDiff+knobWidth/2;
 							followPos = getFollowPos();
 						}
 					};
 					var patchConstraintRight = function(){
 						// patch: contraint right: if new knob2 pos > end knob2 pos, set new closest value;
-						if (isLocked && (closest+lockedDiff-knobWidth/2) > (self_width - knobWidth)){
+						if ((isLocked || barDrag) && (closest+lockedDiff-knobWidth/2) > (self_width - knobWidth)){
 							closest -= (closest+lockedDiff-knobWidth/2) - (self_width - knobWidth);
 						}
 					};
@@ -699,7 +701,7 @@ version:	1.0.1
 							knob1[0].style.left		= closest+'px';
 							follow1[0].style.width	= (closest+knobWidth/4)+'px';
 
-							if (isLocked){
+							if (isLocked || barDrag){
 								knob2[0].style.left		= (closest+lockedDiff-knobWidth/2)+'px';
 								follow2[0].style.width	= (closest+knobWidth/4+lockedDiff)+'px';
 							}
@@ -709,7 +711,7 @@ version:	1.0.1
 							knob2[0].style.left		= closest+'px';
 							follow2[0].style.width	= followPos+'px';
 
-							if (isLocked){
+							if (isLocked || barDrag){
 								knob1[0].style.left		= (closest-lockedDiff+knobWidth/2)+'px';
 								follow1[0].style.width	= (followPos-lockedDiff)+'px';
 							}
@@ -721,7 +723,7 @@ version:	1.0.1
 							knob1.animate({'left': closest+'px'}, 'fast');
 							follow1.animate({'width': (closest+knobWidth/4)+'px'}, 'fast');
 
-							if (isLocked){
+							if (isLocked || barDrag){
 								knob2.animate({'left': (closest+lockedDiff-knobWidth/2)+'px'}, 'fast');
 								follow2.animate({'width': (closest+knobWidth/4+lockedDiff)+'px'}, 'fast');
 							}
@@ -731,7 +733,7 @@ version:	1.0.1
 							knob2.animate({'left': closest+'px'}, 'fast');
 							follow2.animate({'width': followPos+'px'}, 'fast');
 
-							if (isLocked){
+							if (isLocked || barDrag){
 								knob1.animate({'left': (closest-lockedDiff+knobWidth/2)+'px'}, 'fast');
 								follow1.animate({'width': (followPos-lockedDiff)+'px'}, 'fast');
 							}
