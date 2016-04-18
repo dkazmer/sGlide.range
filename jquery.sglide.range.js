@@ -784,8 +784,10 @@ version:	1.0.1
 						}
 
 						if (barDrag){
-							if (z === null)
-								z = target.position().left - x;
+							if (z === null){
+								if (vert) z = e.pageY - self.position().top - target.position().top;
+								else z = target.position().left - x;
+							}
 							x += z;
 							if (!gotLockedPositions) getLockedPositions();
 						}
