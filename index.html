@@ -20,16 +20,18 @@
 #slider1_vert-marks {margin-left: -60px !important;}
 </style>
 
-<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
-<script type="text/javascript" src="jquery.sglide.range.js"></script>
-<!-- <script type="text/javascript" src="sglide.range.js"></script> -->
+<!-- <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+<script type="text/javascript" src="jquery.sglide.range.js"></script> -->
+<script type="text/javascript" src="sglide.range.js"></script>
 <!-- <script type="text/javascript" src="../../~web~/sGlide/jquery.sglide.2.min.js"></script> -->
 <!-- <script type="text/javascript" src="../../~web~/sGlide/sglide.2.min.js"></script> -->
 
 <script type="text/javascript">
 	function run(){
-		/*sglideArr = [];
-		var elsArr = document.getElementsByClassName('slider_bar');
+		sglideArr = [];
+		// var elsArr = document.getElementsByClassName('slider_bar');
+		var elsArr = [document.getElementById('slider1')];
+		var elPct = document.getElementById('percent');
 
 		for (var i = 0; i < elsArr.length; i++) {
 			sglideArr.push(new sGlideRange(elsArr[i], {
@@ -41,18 +43,19 @@
 				// 'image': ['img/knob_.png','img/knob_.png'],
 				// 'image': ['img/images/range_knob_01.png', 'img/images/range_knob_02.png'],
 				'pill': false,
-				'locked': (i === 0) ? true : false,
+				// 'locked': (i === 0) ? true : false,
 				'totalRange': [58,102],
 				'snap': {
 					'marks': true,
 					// 'type': 'hard',
 					'points': 5
+					// 'sensitivity': 0
 				},
 				// 'vertical': true,
 				// 'disabled': true,
 				drag: function(o){
 					// console.log('> drag',o);
-					// document.getElementById('percent').innerHTML = o.id+': '+Math.round(o.value) + '%';
+					elPct.innerHTML = o.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%';
 				},
 				onSnap: function(o){
 					// console.log('> onSnap',o);//,o.id,o);
@@ -60,12 +63,13 @@
 			}));
 		}
 
-		console.log('sglideArr',sglideArr);*/
+		console.log('sglideArr',sglideArr);
 
+		/*var elPct = $('#percent');
 		$('#slider1').sGlideRange({
 			'startAt': [25, 58],
 			'width': 600,
-			'height': 22,
+			'height': 44,
 			'unit': 'px',
 			// 'image': 'img/knob_.png',
 			// 'image': ['img/knob_.png','img/knob_.png'],
@@ -77,25 +81,26 @@
 			'snap': {
 				'marks': true,
 				// 'type': 'soft',
-				'points': 5,
-				'sensitivity': 1
+				'points': 5
+				// 'sensitivity': 0
 			},
 			'vertical': true,
 			// 'disabled': true,
 			drag: function(o){
 				// console.log('> drag',o.percentRange);
-				// document.getElementById('percent').innerHTML = o.id+': '+Math.round(o.value) + '%';
+				elPct.text(o.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%');
 			},
 			onSnap: function(o){
-				// console.log('> onSnap',o);//,o.id,o);
+				// console.log('> onSnap',o);
+				elPct.text(o.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%');
 			}
-		});
+		});*/
 	};
 </script>
 
 </head><body onload="run()">
 
-	<div id="percent">%</div>
-	<div id="slider1" class="slider_bar" data-keys="shift" style="background-color:#069; border-radius:10px; height:40px"></div><br /><div id="slider2" class="slider_bar"></div>
+	<div id="percent">%</div><!-- <span style="margin-top: 50px"> -->
+	<div id="slider1" class="slider_bar" data-keys="shift" style="background-color:#069; border-radius:10px; height:40px"></div><br /><div id="slider2" class="slider_bar"></div><!-- </span> -->
 
 </body></html>

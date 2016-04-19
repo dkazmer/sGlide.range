@@ -2,11 +2,12 @@
 
 /***********************************************************************************
 
-author:		Daniel Kazmer - http://iframework.net
+author:		Daniel Kazmer - http://webshifted.com
 created:	1.11.2014
-version:	1.0.1
+version:	1.2.1
 
 	version history:
+		1.2.1	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: get correct values at onSnap by sending them within setTimeout 0 (19.04.2016)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
 
@@ -24,7 +25,8 @@ version:	1.0.1
 			snap: {
 				marks		: false,
 				type		: 'hard' | 'soft',
-				points		: 0
+				points		: 0,
+				sensitivity	: 0
 			},
 			disabled:				// boolean - default: false
 			vertical:				// boolean - default: false
@@ -33,12 +35,10 @@ version:	1.0.1
 			}
 		});
 
-		all properties are optional, however, to retrieve data, use one of the callbacks
+		All properties are optional. To retrieve data, use one of the callbacks
 
 	goals:
 		- test: positions of locked handles when startAt point specified
-		- snap either handle when dragging one when locked
-		- draggable space between handles when locked
 		- if unit is %, then markers should be also
 		- fix bug: rebuilding vertical rotates again
 
@@ -549,9 +549,9 @@ version:	1.0.1
 					is_down = false;
 				});
 
-				var barDrag = false; console.log('>> snapType', snapType);
+				var barDrag = false;
 				if (!snapType || isLocked){
-					follow2.on(mEvt.down, function(e){
+					follow2.on(mEvt.down, function(){
 						barDrag = true;
 						target = knob2;//knobs.eq(1);
 						is_down = true;
@@ -663,12 +663,13 @@ version:	1.0.1
 						storedSnapValues[storedSnapIndex] = ab;
 						var snapObj = null;
 
-						if (which == 'to')
+						if (which === 'to')
 							snapObj = updateME(getPercent([(storedSnapValues[0].indexOf('-1') !== -1) ? valueObj[guid][0] : storedSnapValues[0], b]));
 						else
 							snapObj = updateME(getPercent([b, (storedSnapValues[1].indexOf('-1') !== -1) ? valueObj[guid][1] : storedSnapValues[1]]));
 
-						options.onSnap(snapObj);
+						// options.onSnap(snapObj);
+						setTimeout(options.onSnap, 0, snapObj);
 					}
 				// }, updateSnap = function(knb, fllw, knobPos, followPos, animateBln){
 				}, updateSnap = function(closest, knobWidth, animateBln, isN){
@@ -785,8 +786,8 @@ version:	1.0.1
 
 						if (barDrag){
 							if (z === null){
-								if (vert) z = e.pageY - self.position().top - target.position().top;
-								else z = target.position().left - x;
+								if (vert) z = e.pageY - self.position().top - target.position().top - (knobWidth / 2);
+								else z = target.position().left - x + (knobWidth / 2);
 							}
 							x += z;
 							if (!gotLockedPositions) getLockedPositions();
@@ -818,7 +819,7 @@ version:	1.0.1
 								} else {
 									targetEl.style.left = (x-stopper)+'px';
 									follow1El.style.width = x+'px';
-									if (!snapType || snapType == 'hard') doSnap('drag', m);
+									if (!snapType || snapType === 'hard') doSnap('drag', m);
 								}
 							} else if (targetEl === knob2El){
 								var knob1_style_left	= knob1El.style.left;
@@ -833,7 +834,7 @@ version:	1.0.1
 								} else {
 									targetEl.style.left = (x-stopper-knobWidth)+'px';
 									follow2El.style.width = x+'px';
-									if (!snapType || snapType == 'hard') doSnap('drag', m);
+									if (!snapType || snapType === 'hard') doSnap('drag', m);
 								}
 							}
 						} else {
@@ -856,7 +857,7 @@ version:	1.0.1
 
 									knob2El.style.left = (x-stopper-knobWidth+lockedDiff)+'px';
 									follow2El.style.width = (x+lockedDiff)+'px';
-									if (!snapType || snapType == 'hard') doSnap('drag', m);
+									if (!snapType || snapType === 'hard') doSnap('drag', m);
 								}
 							} else if (targetEl === knob2El){
 								if (x <= lockedDiff+stopper){
@@ -877,7 +878,7 @@ version:	1.0.1
 
 									knob1El.style.left = (x-stopper-lockedDiff)+'px';
 									follow1El.style.width = (x-lockedDiff)+'px';
-									if (!snapType || snapType == 'hard') doSnap('drag', m);
+									if (!snapType || snapType === 'hard') doSnap('drag', m);
 								}
 							}
 						}
@@ -888,7 +889,7 @@ version:	1.0.1
 						var state = self.data('state');
 
 						// update values
-						if (options.drag && state == 'active')
+						if (options.drag && state === 'active')
 							options.drag(updateME(getPercent([result_from, result_to])));
 					}
 				}).on(mEvt.up+'.'+guid, function(e){
@@ -897,7 +898,7 @@ version:	1.0.1
 					barDrag = false;
 					gotLockedPositions = false;
 					z = null;
-					if (state == 'active'){
+					if (state === 'active'){
 						e = e || event;	// ie fix
 						var x = null, base = 0;
 
@@ -911,15 +912,15 @@ version:	1.0.1
 						var m			= x - stopper;	// true position of knob
 
 						// snap to
-						if (snaps > 0 && snaps < 10 && (snapType == 'soft' || snapType == 'hard')){
+						if (snaps > 0 && snaps < 10 && (snapType === 'soft' || snapType === 'hard')){
 							if (target[0] === knob1[0] && m <= knob2[0].offsetLeft)
-								result_from = doSnap((snapType == 'hard') ? 'hard' : 'soft', m);
+								result_from = doSnap((snapType === 'hard') ? 'hard' : 'soft', m);
 							else if (target[0] === knob2[0] && m >= knob1[0].offsetLeft)
-								result_to = doSnap((snapType == 'hard') ? 'hard' : 'soft', m);
+								result_to = doSnap((snapType === 'hard') ? 'hard' : 'soft', m);
 						}
 
 						if (options.drop) options.drop(updateME(getPercent([result_from, result_to])));
-						if (options.drag && state == 'active') options.drag(updateME(getPercent([result_from, result_to])));
+						if (options.drag && state === 'active') options.drag(updateME(getPercent([result_from, result_to])));
 						self.data('state', 'inactive');
 					}
 				});
@@ -939,7 +940,7 @@ version:	1.0.1
 					lockedKnob2Pos		= null,
 					lockedDiff			= null,
 					gotLockedPositions	= false,
-					getLockedPositions	= function(){console.log('>> getLockedPositions', lockedDiff);
+					getLockedPositions	= function(){
 						lockedKnob1Pos	= parseFloat(knob1[0].style.left.replace('px', ''), 10);// + knob_width_css;
 						lockedKnob2Pos	= parseFloat(knob2[0].style.left.replace('px', ''), 10) + knob1.width();
 						lockedDiff		= lockedKnob2Pos - lockedKnob1Pos;
