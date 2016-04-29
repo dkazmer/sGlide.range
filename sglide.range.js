@@ -127,6 +127,7 @@ function sGlideRange(self, options){
 		self.removeChild(follow);
 		self.removeAttribute('style');
 		self.removeAttribute('data-state');
+		self.classList.remove('vertical');
 
 		for (var i in this) delete this[i];
 	};
@@ -670,6 +671,7 @@ function sGlideRange(self, options){
 				css(self, {'filter': 'progid:DXImageTransform.Microsoft.BasicImage(rotation=3)'});
 				css(self, {'transform-origin': vertWidth+'px 0'}, cssPrefixes);
 			}
+			self.classList.add('vertical');
 		};
 
 		//------------------------------------------------------------------------------------------------------------------------------------
@@ -1043,10 +1045,12 @@ function sGlideRange(self, options){
 		// functions
 
 		var setResults = function(){
-			result_from	= knob1.style.left || '0';
+			/*result_from	= knob1.style.left || '0';
 			result_from	= result_from.replace('px', '');
 			result_to	= knob2.style.left || '0';
-			result_to	= result_to.replace('px', '');
+			result_to	= result_to.replace('px', '');*/
+			result_from	= knob1.offsetLeft || 0;
+			result_to	= (knob2.offsetLeft - knob2.offsetWidth) || 0;
 		};
 
 		// set locked positions
@@ -1055,8 +1059,10 @@ function sGlideRange(self, options){
 			lockedDiff		= null,
 			gotLockedPositions = false,
 			getLockedPositions = function(){
-				lockedKnob1Pos	= parseFloat(knob1.style.left.replace('px', ''), 10);// + knob_width_css;
-				lockedKnob2Pos	= parseFloat(knob2.style.left.replace('px', ''), 10) + knob1.offsetWidth;
+				// lockedKnob1Pos	= parseFloat(knob1.style.left.replace('px', ''), 10);// + knob_width_css;
+				// lockedKnob2Pos	= parseFloat(knob2.style.left.replace('px', ''), 10) + knob1.offsetWidth;
+				lockedKnob1Pos	= knob1.offsetLeft;
+				lockedKnob2Pos	= knob2.offsetLeft;
 				lockedDiff		= lockedKnob2Pos - lockedKnob1Pos;
 				gotLockedPositions = true;
 			};
@@ -1070,7 +1076,8 @@ function sGlideRange(self, options){
 			var o = null, pcts = [], cstm = [], p = 0;
 
 			for (var i = 0; i < arr.length; i++){
-				o = parseFloat(arr[i], 10);
+				// o = parseFloat(arr[i], 10);
+				o = arr[i] | 0;
 				// calculate percentage
 				p = o / (self_width - (knob1.offsetWidth * 2)) * 100;
 				pcts.push(p);

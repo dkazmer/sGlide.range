@@ -7,7 +7,7 @@ created:	1.11.2014
 version:	1.2.1
 
 	version history:
-		1.2.1	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: get correct values at onSnap by sending them within setTimeout 0 (19.04.2016)
+		1.2.1	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: get correct values at onSnap by sending them within setTimeout 0; cleaner: relying on offset values instead of style (type String) (26.04.2016)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
 
@@ -77,7 +77,7 @@ version:	1.2.1
 				self.off(mEvt.down);
 				self.children('.slider_knob').off(mEvt.up).off(mEvt.down).remove();
 				self.children('.follow_bar').off(mEvt.down).remove();
-				self.removeAttr('style');
+				self.removeAttr('style').removeClass('vertical');
 			});
 			return this;
 		},
@@ -532,6 +532,7 @@ version:	1.2.1
 							'backface-visibility': 'hidden'
 						}).css(cssRotate);
 					}
+					self.addClass('vertical');
 				};
 
 				//------------------------------------------------------------------------------------------------------------------------------------
@@ -929,10 +930,13 @@ version:	1.2.1
 				// functions
 
 				var setResults = function(){
-					result_from	= knob1[0].style.left || '0';
+					// console.log('>> setResults', knob2[0].style.left, knob2[0].offsetLeft - knob2.width());
+					/*result_from	= knob1[0].style.left || '0';
 					result_from	= result_from.replace('px', '');
 					result_to	= knob2[0].style.left || '0';
-					result_to	= result_to.replace('px', '');
+					result_to	= result_to.replace('px', '');*/
+					result_from	= knob1[0].offsetLeft || 0;
+					result_to	= (knob2[0].offsetLeft - knob2.width()) || 0;
 				};
 
 				// set locked positions
@@ -941,8 +945,10 @@ version:	1.2.1
 					lockedDiff			= null,
 					gotLockedPositions	= false,
 					getLockedPositions	= function(){
-						lockedKnob1Pos	= parseFloat(knob1[0].style.left.replace('px', ''), 10);// + knob_width_css;
-						lockedKnob2Pos	= parseFloat(knob2[0].style.left.replace('px', ''), 10) + knob1.width();
+						// lockedKnob1Pos	= parseFloat(knob1[0].style.left.replace('px', ''), 10);// + knob_width_css;
+						// lockedKnob2Pos	= parseFloat(knob2[0].style.left.replace('px', ''), 10) + knob2.width();
+						lockedKnob1Pos	= knob1[0].offsetLeft;
+						lockedKnob2Pos	= knob2[0].offsetLeft;
 						lockedDiff		= lockedKnob2Pos - lockedKnob1Pos;
 						gotLockedPositions = true;
 					};
@@ -956,7 +962,8 @@ version:	1.2.1
 					var o = null, pcts = [], cstm = [], p = 0;
 
 					for (var i = 0; i < arr.length; i++){
-						o = parseFloat(arr[i], 10);
+						// o = parseFloat(arr[i], 10);
+						o = arr[i] | 0;
 						// calculate percentage
 						p = o / (self_width - (knob1.width() * 2)) * 100;
 						pcts.push(p);
