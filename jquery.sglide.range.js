@@ -786,10 +786,7 @@ version:	1.2.1
 						}
 
 						if (barDrag){
-							if (z === null){
-								if (vert) z = e.pageY - self.position().top - target.position().top - (knobWidth / 2);
-								else z = target.position().left - x + (knobWidth / 2);
-							}
+							if (z === null) z = target[0].offsetLeft - x + (knobWidth / 2);
 							x += z;
 							if (!gotLockedPositions) getLockedPositions();
 						}

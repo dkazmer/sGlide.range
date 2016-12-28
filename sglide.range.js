@@ -899,10 +899,7 @@ function sGlideRange(self, options){
 				}
 
 				if (barDrag){
-					if (z === null){
-						if (vert) z = e.pageY - self.offsetTop - (selfWidth - target.offsetLeft) + (knobWidth / 2);
-						else z = target.offsetLeft - x + (knobWidth / 2);
-					}
+					if (z === null) z = target.offsetLeft - x + (knobWidth / 2);
 					x += z;
 					if (!gotLockedPositions) getLockedPositions();
 				}
@@ -913,8 +910,8 @@ function sGlideRange(self, options){
 				if (e.returnValue) e.returnValue = false;
 
 				// constraint
-				if (!isLocked && !barDrag){
-					if (target === knob1){
+				if (!isLocked && !barDrag){console.log('>> regular drag');
+					if (target === knob1){console.log('>> knob 1');
 						var knob2_style_left	= knob2.style.left;
 						var knob2_offset_left	= knob2.offsetLeft;
 
@@ -929,7 +926,7 @@ function sGlideRange(self, options){
 							follow1.style.width = x+'px';
 							if (!snapType || snapType === 'hard') doSnap('drag', m);
 						}
-					} else if (target === knob2){
+					} else if (target === knob2){console.log('>> knob 2');
 						var knob1_style_left	= knob1.style.left;
 						var knob1_offset_left	= knob1.offsetLeft;
 
@@ -945,8 +942,8 @@ function sGlideRange(self, options){
 							if (!snapType || snapType === 'hard') doSnap('drag', m);
 						}
 					}
-				} else {
-					if (target === knob1){
+				} else {console.log('>> locked drag');
+					if (target === knob1){console.log('>> knob 1');
 						if (x <= stopper){
 							target.style.left = '0';
 							follow1.style.width = stopper+'px';
@@ -967,7 +964,7 @@ function sGlideRange(self, options){
 							follow2.style.width = (x+lockedDiff)+'px';
 							if (!snapType || snapType === 'hard') doSnap('drag', m);
 						}
-					} else if (target === knob2){
+					} else if (target === knob2){console.log('>> knob 2');
 						if (x <= lockedDiff+stopper){
 							target.style.left = (lockedDiff-knobWidth)+'px';
 							follow2.style.width = (lockedDiff+stopper)+'px';
