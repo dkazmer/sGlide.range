@@ -44,23 +44,24 @@
 				// 'image': ['img/knob_.png','img/knob_.png'],
 				'image': ['img/images/range_knob_01.png', 'img/images/range_knob_02.png'],
 				'pill': false,
-				'locked': true,//(i === 0) ? true : false,
+				// 'locked': true,//(i === 0) ? true : false,
 				'totalRange': [58,102],
 				'snap': {
 					'marks': true,
-					'type': 'hard',
+					// 'type': 'hard',
 					// 'sensitivity': 1,
 					'points': 5
 				},
 				'retina': false,
-				'vertical': true,
+				// 'vertical': true,
 				// 'disabled': true,
 				drag: function(o){
 					// console.log('> drag',o);
-					elPct.innerHTML = o.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%';
+					// elPct.innerHTML = o.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%';
 				},
 				onSnap: function(o){
-					// console.log('> onSnap',o);//,o.id,o);
+					// console.log('> onSnap',o.percentRange, o.customRange);//,o.id,o);
+					elPct.innerHTML = o.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%';
 				}
 			};
 
