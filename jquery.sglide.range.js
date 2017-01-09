@@ -624,9 +624,10 @@ version:	1.2.1
 								} else if (!isLocked && target[0] === knob2[0]) m -= knobWidthHalf;	// knob2 adjust
 							};
 
-							if (kind == 'drag'){
-								if (snapType == 'hard'){
+							if (kind === 'drag'){
+								if (snapType === 'hard'){
 									updateSnap(closest, knobWidth);
+									console.log('>> knkob is', target[0]);
 									doOnSnap(closest, pctVal, ((target[0] === knob1[0]) ? 'from' : 'to'));
 
 								} else {
@@ -638,7 +639,7 @@ version:	1.2.1
 
 									} else storedSnapValues = ['a-1', 'b-1'];
 								}
-							} else if (kind == 'hard'){
+							} else if (kind === 'hard'){
 								lockedRangeAdjusts();
 								updateSnap(closest, knobWidth, false, boolN);
 								return closest;
@@ -659,7 +660,7 @@ version:	1.2.1
 					} else {
 						ab = 'a'+a;
 					}
-
+// else if neither (barDrag)
 					if (options.onSnap && ab !== storedSnapValues[storedSnapIndex]){
 						storedSnapValues[storedSnapIndex] = ab;
 						var snapObj = null;
@@ -897,6 +898,10 @@ version:	1.2.1
 					gotLockedPositions = false;
 					z = null;
 					if (state === 'active'){
+						if (snapType === 'hard'){
+							self.data('state', 'inactive');
+							return false;
+						}
 						e = e || event;	// ie fix
 						var x = null, base = 0;
 

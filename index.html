@@ -20,9 +20,9 @@
 #slider1_vert-marks {margin-left: -60px !important;}
 </style>
 
-<!-- <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
-<script type="text/javascript" src="jquery.sglide.range.js"></script> -->
-<script type="text/javascript" src="sglide.range.js"></script>
+<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+<script type="text/javascript" src="jquery.sglide.range.js"></script>
+<!-- <script type="text/javascript" src="sglide.range.js"></script> -->
 <!-- <script type="text/javascript" src="../../~web~/sGlide/jquery.sglide.2.min.js"></script> -->
 <!-- <script type="text/javascript" src="../../~web~/sGlide/sglide.2.min.js"></script> -->
 
@@ -30,7 +30,7 @@
 	// to fix: 1. mouseup, 2. snap other knob as well, 3. bar-drag while hard-snap
 	// 2. calculate where on the bar the mouse is, then where the virtual knobs would be based on it.
 	function run(){
-		sglideArr = [];
+		/*sglideArr = [];
 		// var elsArr = document.getElementsByClassName('slider_bar');
 		var elsArr		= [document.getElementById('slider1')],
 			elSettings	= document.getElementById('settings'),
@@ -53,7 +53,7 @@
 					'points': 5
 				},
 				'retina': false,
-				// 'vertical': true,
+				'vertical': true,
 				// 'disabled': true,
 				drag: function(o){
 					// console.log('> drag',o);
@@ -61,19 +61,20 @@
 				},
 				onSnap: function(o){
 					// console.log('> onSnap',o.percentRange, o.customRange);//,o.id,o);
+					// console.log('> onSnap',o,o.percentRange[0]);
 					elPct.innerHTML = o.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%';
 				}
 			};
 
 		for (var i = 0; i < elsArr.length; i++){
 			sglideArr.push(new sGlideRange(elsArr[i], settings));
-		}
+		}*/
 
 		// elSettings.innerText = JSON.stringify(settings, null, '\t');
 
 		// console.log('sglideArr',sglideArr);
 
-		/*var $pct = $('#percent');
+		var $pct = $('#percent');
 		$('#slider1').sGlideRange({
 			'startAt': [25, 58],
 			'width': 600,
@@ -88,21 +89,21 @@
 			'locked': true,
 			'snap': {
 				'marks': true,
-				// 'type': 'soft',
+				'type': 'hard',
 				'points': 5
 				// 'sensitivity': 0
 			},
-			'vertical': true,
+			// 'vertical': true,
 			// 'disabled': true,
 			drag: function(o){
 				// console.log('> drag',o.percentRange);
-				$pct.text(o.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%');
+				// $pct.text(o.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%');
 			},
 			onSnap: function(o){
 				// console.log('> onSnap',o);
 				$pct.text(o.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%');
 			}
-		});*/
+		});
 	};
 </script>
 

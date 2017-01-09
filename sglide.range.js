@@ -801,7 +801,6 @@ function sGlideRange(self, options){
 				}
 			}
 		}, doOnSnap = function(a, b, which){ // callback: onSnap
-			// setTimeout(function(){
 			var storedSnapIndex = 0;
 			var ab = null;
 
@@ -820,11 +819,10 @@ function sGlideRange(self, options){
 					snapObj = updateME(getPercent([(storedSnapValues[0].indexOf('-1') !== -1) ? THE_VALUES[0] : storedSnapValues[0], b]));
 				else
 					snapObj = updateME(getPercent([b, (storedSnapValues[1].indexOf('-1') !== -1) ? THE_VALUES[1] : storedSnapValues[1]]));
-console.log('>>',snapObj);
-// console.log('>>',snapObj.percentRange, snapObj.customRange);
-				options.onSnap(snapObj);
-				// options.onSnap(extend(snapObj, {}));
-			}//}, 0);
+
+				// time out to prevent value distortions
+				setTimeout(options.onSnap, 0, snapObj);
+			}
 		}, updateSnap = function(closest, knobWidth, animateBln, isN){
 			var getFollowPos = function(){
 				return (closest+knobWidth/4+knobWidth/2);
