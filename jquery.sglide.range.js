@@ -171,6 +171,7 @@ version:	1.2.1
 					'vertical'		: false,
 					'totalRange'	: [0,0],
 					'locked'		: false,
+					'noKnob'		: false,
 					'retina'		: true
 				}, options);
 
@@ -213,11 +214,11 @@ version:	1.2.1
 					markers			= (settings.snap.points > 0 && settings.snap.points <= 9 && settings.snap.marks),
 					snapType		= (settings.snap.type != 'hard' && settings.snap.type != 'soft') ? false : settings.snap.type,
 					knob_bg			= '#333',
-					knob_width_css	= (!settings.disabled ? '2%' : '0'),
+					knob_width_css	= (settings.noKnob ? '0' : '2%'),
 					knob_height_css	= 'inherit',
 					self_height		= Math.round(settings.height)+'px',
 					r_corners		= settings.pill,
-					imageBln		= (settings.image != 'none' && settings.image !== '' && !settings.disabled),
+					imageBln		= (settings.image != 'none' && settings.image !== '' && !settings.noKnob),
 					imgLoaded		= false,
 					resize			= false,
 					retina			= (window.devicePixelRatio > 1) && settings.retina,
@@ -432,9 +433,11 @@ version:	1.2.1
 					'width': knob_width_css,
 					'background': knob_bg,
 					'height': knob_height_css,
-					'display': (!settings.disabled ? 'inline-block' : 'none'),
-					'font-size': '0',
+					// 'display': (!settings.noKnob ? 'inline-block' : 'none'),
+					'display': 'inline-block',
+					'visibility': (!settings.noKnob ? 'visibe' : 'hidden'),
 					'cursor': (!settings.disabled ? 'pointer' : 'default'),
+					'font-size': '0',
 					'position': 'relative',
 					'z-index': '2'
 				}).css(cssContentBox);
@@ -551,7 +554,7 @@ version:	1.2.1
 				});
 
 				var barDrag = false;
-				if (!snapType || isLocked){
+				if ((!snapType || isLocked) && !settings.disabled){
 					follow2.on(mEvt.down, function(){
 						barDrag = true;
 						target = knob2;//knobs.eq(1);
@@ -627,7 +630,7 @@ version:	1.2.1
 							if (kind === 'drag'){
 								if (snapType === 'hard'){
 									updateSnap(closest, knobWidth);
-									console.log('>> knkob is', target[0]);
+									// console.log('>> knob is', target[0]);
 									doOnSnap(closest, pctVal, ((target[0] === knob1[0]) ? 'from' : 'to'));
 
 								} else {
@@ -654,13 +657,13 @@ version:	1.2.1
 					var storedSnapIndex = 0;
 					var ab = null;
 
-					if (which == 'to'){
+					if (which === 'to'){
 						storedSnapIndex = 1;
 						ab = 'b'+b;
 					} else {
 						ab = 'a'+a;
 					}
-// else if neither (barDrag)
+
 					if (options.onSnap && ab !== storedSnapValues[storedSnapIndex]){
 						storedSnapValues[storedSnapIndex] = ab;
 						var snapObj = null;
@@ -749,20 +752,12 @@ version:	1.2.1
 					if (markers) drawSnapmarks(true);
 				};
 
-				if (isMobile){
-					$(document).on(mEvt.down+'.'+guid, function(e){
-						// is_down = false;
-						touchX = e.originalEvent.touches[0].pageX;
-						touchY = e.originalEvent.touches[0].pageY;
-					});
-				}
 				if (isMobile || uAgent.match(/Windows Phone/i)){
 					// orientation
 					$(window).on('orientationchange.'+guid, eventWindowResize);
 				}
 
-				var z = null;
-				$(document).on(mEvt.move+'.'+guid, function(e){
+				var eventDocumentMouseMove = function(e){
 					// console.log('>> doc move', is_down);
 					if (is_down){
 						e = e || event;	// ie fix
@@ -891,7 +886,9 @@ version:	1.2.1
 						if (options.drag && state === 'active')
 							options.drag(updateME(getPercent([result_from, result_to])));
 					}
-				}).on(mEvt.up+'.'+guid, function(e){
+				};
+
+				var eventDocumentMouseUp = function(e){
 					var state = self.data('state');
 					is_down = false;
 					barDrag = false;
@@ -926,7 +923,18 @@ version:	1.2.1
 						if (options.drag && state === 'active') options.drag(updateME(getPercent([result_from, result_to])));
 						self.data('state', 'inactive');
 					}
-				});
+				};
+
+				if (isMobile && !settings.disabled){
+					$(document).on(mEvt.down+'.'+guid, function(e){
+						// is_down = false;
+						touchX = e.originalEvent.touches[0].pageX;
+						touchY = e.originalEvent.touches[0].pageY;
+					});
+				}
+
+				var z = null;
+				if (!settings.disabled) $(document).on(mEvt.move+'.'+guid, eventDocumentMouseMove).on(mEvt.up+'.'+guid, eventDocumentMouseUp);
 
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// functions

@@ -302,7 +302,8 @@ function sGlideRange(self, options){
 			'vertical'		: false,
 			'totalRange'	: [0,0],
 			'retina'		: true,
-			'locked'		: false
+			'locked'		: false,
+			'noKnob'		: false
 		}, options);
 
 		self.removeAttribute('style');	// remove user inline styles
@@ -336,11 +337,11 @@ function sGlideRange(self, options){
 			markers			= (settings.snap.points > 0 && settings.snap.points <= 9 && settings.snap.marks),
 			snapType		= (settings.snap.type != 'hard' && settings.snap.type != 'soft') ? false : settings.snap.type,
 			knob_bg			= '#333',
-			knob_width_css	= (!settings.disabled ? '2%' : '0'),
+			knob_width_css	= (settings.noKnob ? '0' : '2%'),
 			knob_height_css	= 'inherit',
 			self_height		= Math.round(settings.height)+'px',
 			r_corners		= settings.pill,
-			imageBln		= (settings.image != 'none' && settings.image !== '' && !settings.disabled),
+			imageBln		= (settings.image != 'none' && settings.image !== '' && !settings.noKnob),
 			retina			= (window.devicePixelRatio > 1) && settings.retina,
 			customRange		= (settings.totalRange[0] !== 0 || settings.totalRange[1] !== 0) && settings.totalRange[0] < settings.totalRange[1],
 			MSoffsetTop		= null,
@@ -563,6 +564,7 @@ function sGlideRange(self, options){
 				'background': knob_bg,
 				'height': knob_height_css,
 				'display': 'inline-block',
+				'visibility': (!settings.noKnob ? 'visibe' : 'hidden'),
 				'cursor': (!settings.disabled ? 'pointer' : 'default'),
 				'font-size': '0',
 				'position': 'relative',
@@ -701,7 +703,7 @@ function sGlideRange(self, options){
 		};
 
 		var barDrag = false;
-		if (!snapType || isLocked){
+		if ((!snapType || isLocked) && !settings.disabled){
 			follow2.addEventListener(mEvt.down, eventBarMouseDown);
 			follow2.addEventListener(mEvt.up, eventBarMouseUp);
 		}
@@ -1035,8 +1037,10 @@ function sGlideRange(self, options){
 			if (markers) drawSnapmarks(true);
 		};
 
-		document.addEventListener(mEvt.move, eventDocumentMouseMove);
-		document.addEventListener(mEvt.up, eventDocumentMouseUp);
+		if (!settings.disabled){
+			document.addEventListener(mEvt.move, eventDocumentMouseMove);
+			document.addEventListener(mEvt.up, eventDocumentMouseUp);
+		}
 		window.addEventListener('resize', eventWindowResize);
 
 		//------------------------------------------------------------------------------------------------------------------------------------
