@@ -679,9 +679,9 @@ function sGlideRange(self, options){
 		//------------------------------------------------------------------------------------------------------------------------------------
 		// events
 
-		// knob
-		var is_down	= false;
-		var target	= null;
+		var target	= null,
+			is_down	= false,
+			barDrag = false;
 
 		eventKnobMouseDown = function(e){
 			target = e.currentTarget;
@@ -692,28 +692,13 @@ function sGlideRange(self, options){
 			is_down = false;
 		};
 		eventBarMouseDown = function(){
-			barDrag = true;
+			is_down = barDrag = true;
 			target = knob2;//knobs.eq(1);
-			is_down = true;
 			self.setAttribute('data-state', 'active');
 		};
 		eventBarMouseUp = function(){
-			is_down = false;
-			barDrag = false;
+			is_down = barDrag = false;
 		};
-
-		var barDrag = false;
-		if ((!snapType || isLocked) && !settings.disabled){
-			follow2.addEventListener(mEvt.down, eventBarMouseDown);
-			follow2.addEventListener(mEvt.up, eventBarMouseUp);
-		}
-
-		if (!settings.disabled){
-			for (ia = 0; ia < knobs.length; ia++){
-				knobs[ia].addEventListener(mEvt.down, eventKnobMouseDown);
-				knobs[ia].addEventListener(mEvt.up, eventKnobMouseUp);
-			}
-		}
 
 		// snapping
 		var storedSnapValues = ['a-1', 'b-1'];
@@ -1037,11 +1022,21 @@ function sGlideRange(self, options){
 			if (markers) drawSnapmarks(true);
 		};
 
-		if (!settings.disabled){
-			document.addEventListener(mEvt.move, eventDocumentMouseMove);
-			document.addEventListener(mEvt.up, eventDocumentMouseUp);
+		var initEventHandlers = function(){
+			if (!settings.disabled){
+				document.addEventListener(mEvt.move, eventDocumentMouseMove);
+				document.addEventListener(mEvt.up, eventDocumentMouseUp);
+
+				for (ia = 0; ia < knobs.length; ia++){
+					knobs[ia].addEventListener(mEvt.down, eventKnobMouseDown);
+					knobs[ia].addEventListener(mEvt.up, eventKnobMouseUp);
+				}
+				follow2.addEventListener(mEvt.down, eventBarMouseDown);
+				follow2.addEventListener(mEvt.up, eventBarMouseUp);
+			}
+
+			window.addEventListener('resize', eventWindowResize);
 		}
-		window.addEventListener('resize', eventWindowResize);
 
 		//------------------------------------------------------------------------------------------------------------------------------------
 		// functions
@@ -1112,6 +1107,8 @@ function sGlideRange(self, options){
 			var rlt = updateME(getPercent([result_from, result_to]));
 
 			// inits
+			initEventHandlers();
+
 			if (snaps > 0 && snaps < 10)	drawSnapmarks();
 			if (vert)						verticalTransform();
 			if (options.onload)				options.onload(rlt);

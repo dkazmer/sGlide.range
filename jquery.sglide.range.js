@@ -541,30 +541,11 @@ version:	1.2.1
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// events
 
-				// knob
 				var is_down	= false,
-					target	= null;
+					target	= null,
 
-				knobs.on(mEvt.down, function(e){
-					target = $(e.target);
-					is_down = true;
-					self.data('state', 'active');
-				}).on(mEvt.up, function(){
-					is_down = false;
-				});
-
-				var barDrag = false;
-				if ((!snapType || isLocked) && !settings.disabled){
-					follow2.on(mEvt.down, function(){
-						barDrag = true;
-						target = knob2;//knobs.eq(1);
-						is_down = true;
-						self.data('state', 'active');
-					}).on(mEvt.up, function(){
-						is_down = false;
-						barDrag = false;
-					});
-				}
+					barDrag = false,
+					z		= null;
 
 				// snapping
 				var storedSnapValues = ['a-1', 'b-1'];
@@ -712,6 +693,8 @@ version:	1.2.1
 								follow2[0].style.width	= (closest+knobWidth/4+lockedDiff)+'px';
 							}
 						} else {
+							// add hard snapping other knob functionality in here
+
 							patchConstraintLeft();
 
 							knob2[0].style.left		= closest+'px';
@@ -925,26 +908,41 @@ version:	1.2.1
 					}
 				};
 
-				if (isMobile && !settings.disabled){
-					$(document).on(mEvt.down+'.'+guid, function(e){
-						// is_down = false;
-						touchX = e.originalEvent.touches[0].pageX;
-						touchY = e.originalEvent.touches[0].pageY;
-					});
-				}
+				var initEventHandlers = function(){
+					// init touch event handlers
+					if (isMobile && !settings.disabled){
+						$(document).on(mEvt.down+'.'+guid, function(e){
+							// is_down = false;
+							touchX = e.originalEvent.touches[0].pageX;
+							touchY = e.originalEvent.touches[0].pageY;
+						});
+					}
 
-				var z = null;
-				if (!settings.disabled) $(document).on(mEvt.move+'.'+guid, eventDocumentMouseMove).on(mEvt.up+'.'+guid, eventDocumentMouseUp);
+					// init event handlers
+					if (!settings.disabled){
+						knobs.on(mEvt.down, function(e){
+							target = $(e.target);
+							is_down = true;
+							self.data('state', 'active');
+						}).on(mEvt.up, function(){
+							is_down = false;
+						});
+
+						$(document).on(mEvt.move+'.'+guid, eventDocumentMouseMove).on(mEvt.up+'.'+guid, eventDocumentMouseUp);
+						follow2.on(mEvt.down, function(){
+							is_down = barDrag = true;
+							target = knob2;//knobs.eq(1);
+							self.data('state', 'active');
+						}).on(mEvt.up, function(){
+							is_down = barDrag = false;
+						});
+					}
+				};
 
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// functions
 
 				var setResults = function(){
-					// console.log('>> setResults', knob2[0].style.left, knob2[0].offsetLeft - knob2.width());
-					/*result_from	= knob1[0].style.left || '0';
-					result_from	= result_from.replace('px', '');
-					result_to	= knob2[0].style.left || '0';
-					result_to	= result_to.replace('px', '');*/
 					result_from	= knob1[0].offsetLeft || 0;
 					result_to	= (knob2[0].offsetLeft - knob2.width()) || 0;
 				};
@@ -955,8 +953,6 @@ version:	1.2.1
 					lockedDiff			= null,
 					gotLockedPositions	= false,
 					getLockedPositions	= function(){
-						// lockedKnob1Pos	= parseFloat(knob1[0].style.left.replace('px', ''), 10);// + knob_width_css;
-						// lockedKnob2Pos	= parseFloat(knob2[0].style.left.replace('px', ''), 10) + knob2.width();
 						lockedKnob1Pos	= knob1[0].offsetLeft;
 						lockedKnob2Pos	= knob2[0].offsetLeft;
 						lockedDiff		= lockedKnob2Pos - lockedKnob1Pos;
@@ -1004,8 +1000,10 @@ version:	1.2.1
 					setResults();
 
 					var rlt = updateME(getPercent([result_from, result_to]));
-					
+
 					// inits
+					initEventHandlers();
+					
 					if (snaps > 0 && snaps < 10)	drawSnapmarks();
 					if (vert)						verticalTransform();
 					if (options.onload)				options.onload(rlt);
