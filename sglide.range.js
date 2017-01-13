@@ -764,7 +764,7 @@ function sGlideRange(self, options){
 
 					if (kind == 'drag'){
 						if (snapType == 'hard'){
-							updateSnap(closest, knobWidth);
+							updateSnap(closest, knobWidth, false, false, closest_n, pctVal);
 							doOnSnap(closest, pctVal, ((target === knob1) ? 'from' : 'to'));
 
 						} else {
@@ -810,7 +810,7 @@ function sGlideRange(self, options){
 				// time out to prevent value distortions
 				setTimeout(options.onSnap, 0, snapObj);
 			}
-		}, updateSnap = function(closest, knobWidth, animateBln, isN){
+		}, updateSnap = function(closest, knobWidth, animateBln, isN, closest_n, pctVal){
 			var getFollowPos = function(){
 				return (closest+knobWidth/4+knobWidth/2);
 			};
@@ -829,8 +829,17 @@ function sGlideRange(self, options){
 				if (isLocked || barDrag){
 					knob2.style.left	= (closest+lockedDiff-knobWidth/2)+'px';
 					follow2.style.width	= (closest+knobWidth/4+lockedDiff)+'px';
+					target = knob2;	// reset after hard snapping other knob
 				}
 			} else {
+				// add hard snapping other knob functionality in here
+				if (Math.abs(closest_n - knob1.offsetLeft) < Math.abs(closest - knob2.offsetLeft) && barDrag){
+					target = knob1;
+					updateSnap(closest_n, knobWidth);
+					// doOnSnap(closest_n, pctVal, 'from');
+					return false;
+				}
+
 				// patch: constraint left: if new knob1 pos < 0, set new closest value;
 				if ((isLocked || barDrag) && (closest-lockedDiff+knobWidth/2) <= 0){
 					closest -= closest-lockedDiff+knobWidth/2;
@@ -990,29 +999,31 @@ function sGlideRange(self, options){
 			gotLockedPositions = false;
 			z = null;
 			if (self.getAttribute('data-state') === 'active'){
-				e = e || event;	// ie fix
-				var x = null, base = 0, selfWidth = self.offsetWidth;
+				if (snapType !== 'hard'){
+					e = e || event;	// ie fix
+					var x = null, base = 0, selfWidth = self.offsetWidth;
 
-				if (vert){
-					// base = self.offsetTop + selfWidth;
-					base = (!window.navigator.msPointerEnabled ? self.offsetTop : self.getBoundingClientRect().top) + selfWidth;
-					x = base - ((!isMobile ? e.pageY : touchY)-2);
-				} else x = (!isMobile ? e.pageX : touchX) - self.offsetLeft;
-				
-				var knobWidth	= knob1.offsetWidth;
-				var stopper		= knobWidth / 2;
-				var m			= x - stopper;	// true position of knob
+					if (vert){
+						// base = self.offsetTop + selfWidth;
+						base = (!window.navigator.msPointerEnabled ? self.offsetTop : self.getBoundingClientRect().top) + selfWidth;
+						x = base - ((!isMobile ? e.pageY : touchY)-2);
+					} else x = (!isMobile ? e.pageX : touchX) - self.offsetLeft;
+					
+					var knobWidth	= knob1.offsetWidth,
+						stopper		= knobWidth / 2,
+						m			= x - stopper;	// true position of knob
 
-				// snap to
-				if (snaps > 0 && snaps < 10 && (snapType === 'soft' || snapType === 'hard')){
-					if (target === knob1 && m <= knob2.offsetLeft)
-						result_from = doSnap((snapType === 'hard') ? 'hard' : 'soft', m);
-					else if (target === knob2 && m >= knob1.offsetLeft)
-						result_to = doSnap((snapType === 'hard') ? 'hard' : 'soft', m);
+					// snap to
+					if (snaps > 0 && snaps < 10 && (snapType === 'soft' || snapType === 'hard')){
+						if (target === knob1 && m <= knob2.offsetLeft)
+							result_from = doSnap((snapType === 'hard') ? 'hard' : 'soft', m);
+						else if (target === knob2 && m >= knob1.offsetLeft)
+							result_to = doSnap((snapType === 'hard') ? 'hard' : 'soft', m);
+					}
+
+					if (options.drop) options.drop(updateME(getPercent([result_from, result_to])));
+					if (options.drag && self.getAttribute('data-state') === 'active') options.drag(updateME(getPercent([result_from, result_to])));
 				}
-
-				if (options.drop) options.drop(updateME(getPercent([result_from, result_to])));
-				if (options.drag && self.getAttribute('data-state') === 'active') options.drag(updateME(getPercent([result_from, result_to])));
 				self.setAttribute('data-state', 'inactive');
 			}
 		};

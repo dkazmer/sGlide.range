@@ -878,32 +878,30 @@ version:	1.2.1
 					gotLockedPositions = false;
 					z = null;
 					if (state === 'active'){
-						if (snapType === 'hard'){
-							self.data('state', 'inactive');
-							return false;
+						if (snapType !== 'hard'){
+							e = e || event;	// ie fix
+							var x = null, base = 0;
+
+							if (vert){
+								base = self.position().top + self_width;
+								x = base - ((!isMobile ? e.pageY : touchY)-2);
+							} else x = (!isMobile ? e.pageX : touchX) - self.offset().left;
+							
+							var knobWidth	= knobs.width();
+							var stopper		= knobWidth / 2;
+							var m			= x - stopper;	// true position of knob
+
+							// snap to
+							if (snaps > 0 && snaps < 10 && (snapType === 'soft' || snapType === 'hard')){
+								if (target[0] === knob1[0] && m <= knob2[0].offsetLeft)
+									result_from = doSnap((snapType === 'hard') ? 'hard' : 'soft', m);
+								else if (target[0] === knob2[0] && m >= knob1[0].offsetLeft)
+									result_to = doSnap((snapType === 'hard') ? 'hard' : 'soft', m);
+							}
+
+							if (options.drop) options.drop(updateME(getPercent([result_from, result_to])));
+							if (options.drag && state === 'active') options.drag(updateME(getPercent([result_from, result_to])));
 						}
-						e = e || event;	// ie fix
-						var x = null, base = 0;
-
-						if (vert){
-							base = self.position().top + self_width;
-							x = base - ((!isMobile ? e.pageY : touchY)-2);
-						} else x = (!isMobile ? e.pageX : touchX) - self.offset().left;
-						
-						var knobWidth	= knobs.width();
-						var stopper		= knobWidth / 2;
-						var m			= x - stopper;	// true position of knob
-
-						// snap to
-						if (snaps > 0 && snaps < 10 && (snapType === 'soft' || snapType === 'hard')){
-							if (target[0] === knob1[0] && m <= knob2[0].offsetLeft)
-								result_from = doSnap((snapType === 'hard') ? 'hard' : 'soft', m);
-							else if (target[0] === knob2[0] && m >= knob1[0].offsetLeft)
-								result_to = doSnap((snapType === 'hard') ? 'hard' : 'soft', m);
-						}
-
-						if (options.drop) options.drop(updateME(getPercent([result_from, result_to])));
-						if (options.drag && state === 'active') options.drag(updateME(getPercent([result_from, result_to])));
 						self.data('state', 'inactive');
 					}
 				};
