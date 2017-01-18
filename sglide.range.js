@@ -762,32 +762,48 @@ function sGlideRange(self, options){
 						} else if (!isLocked && target === knob2) m -= knobWidthHalf;	// knob2 adjust
 					};
 
-					if (kind == 'drag'){
-						if (snapType == 'hard'){
-							updateSnap(closest, knobWidth, false, false, closest_n, pctVal);
-							doOnSnap(closest, pctVal, ((target === knob1) ? 'from' : 'to'));
+					if (kind === 'drag'){
+						if (snapType === 'hard'){
+							
+
+							if (barDrag){
+								if (Math.abs(closest_n - knob1.offsetLeft) < Math.abs(closest - knob2.offsetLeft)){
+									target = knob1;
+									updateSnap(closest_n, knobWidth);
+									target = knob2;// reset
+									doOnSnap(closest_n, pctVal, 'from');
+								} else {
+									updateSnap(closest, knobWidth);
+									doOnSnap(closest, pctVal, 'to');
+								}
+							} else {console.log('>> knob drag', closest);
+								updateSnap(closest, knobWidth, false, closest_n, pctVal);
+								doOnSnap(closest, pctVal, ((target === knob1) ? 'from' : 'to'));
+							}
+
 
 						} else {
 							lockedRangeAdjusts();
 
 							if (Math.round(Math.abs(closest - m + knobWidthHalf/8)) < snapOffset){
-								updateSnap(closest, knobWidth, false, boolN);
+								updateSnap(closest, knobWidth, boolN);
 								doOnSnap(closest, pctVal, ((target === knob1) ? 'from' : 'to'));
 
 							} else storedSnapValues = ['a-1', 'b-1'];
 						}
-					} else if (kind == 'hard'){
+					} else if (kind === 'hard'){
 						lockedRangeAdjusts();
-						updateSnap(closest, knobWidth, false, boolN);
+						updateSnap(closest, knobWidth, boolN);
 						return closest;
 					} else {
 						lockedRangeAdjusts();
-						updateSnap(closest, knobWidth, false, boolN);	// animation not supported
+						updateSnap(closest, knobWidth, boolN);	// animation not supported
 						return closest;
 					}
 				}
 			}
 		}, doOnSnap = function(a, b, which){ // callback: onSnap
+			console.log('>> snapper', a,b,which);
 			var storedSnapIndex = 0;
 			var ab = null;
 
@@ -798,7 +814,7 @@ function sGlideRange(self, options){
 				ab = 'a'+a;
 			}
 
-			if (options.onSnap && ab !== storedSnapValues[storedSnapIndex]){
+			if (options.onSnap && ab !== storedSnapValues[storedSnapIndex]){console.log('>> on snap', ab,storedSnapValues[storedSnapIndex]);
 				storedSnapValues[storedSnapIndex] = ab;
 				var snapObj = null;
 
@@ -810,7 +826,7 @@ function sGlideRange(self, options){
 				// time out to prevent value distortions
 				setTimeout(options.onSnap, 0, snapObj);
 			}
-		}, updateSnap = function(closest, knobWidth, animateBln, isN, closest_n, pctVal){
+		}, updateSnap = function(closest, knobWidth, isN, closest_n, pctVal){
 			var getFollowPos = function(){
 				return (closest+knobWidth/4+knobWidth/2);
 			};
@@ -823,28 +839,29 @@ function sGlideRange(self, options){
 					closest -= (closest+lockedDiff-knobWidth/2) - (self_width - knobWidth);
 				}
 
+				// constrain left knob to left side - glitch most evident at hard snap
+				if (closest > knob2.offsetLeft - (knobWidth/2))// && snapType === 'hard')
+					closest = knob2.offsetLeft - (knobWidth/2);
+
 				knob1.style.left	= closest+'px';
 				follow1.style.width	= (closest+knobWidth/4)+'px';
 
 				if (isLocked || barDrag){
 					knob2.style.left	= (closest+lockedDiff-knobWidth/2)+'px';
 					follow2.style.width	= (closest+knobWidth/4+lockedDiff)+'px';
-					target = knob2;	// reset after hard snapping other knob
+					// reset after hard snapping other knob at barDrag
+					// if (snapType === 'hard' && barDrag) target = knob2;
 				}
 			} else {
-				// add hard snapping other knob functionality in here
-				if (Math.abs(closest_n - knob1.offsetLeft) < Math.abs(closest - knob2.offsetLeft) && barDrag){
-					target = knob1;
-					updateSnap(closest_n, knobWidth);
-					// doOnSnap(closest_n, pctVal, 'from');
-					return false;
-				}
-
 				// patch: constraint left: if new knob1 pos < 0, set new closest value;
 				if ((isLocked || barDrag) && (closest-lockedDiff+knobWidth/2) <= 0){
 					closest -= closest-lockedDiff+knobWidth/2;
 					followPos = getFollowPos();
 				}
+
+				// constrain right knob to right side - glitch most evident at hard snap
+				if (closest < knob1.offsetLeft)// && snapType === 'hard')
+					closest = knob1.offsetLeft;
 
 				knob2.style.left	= closest+'px';
 				follow2.style.width	= followPos+'px';

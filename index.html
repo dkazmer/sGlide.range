@@ -30,7 +30,9 @@
 	// + fix: barDrag disabled
 	// + add: noKnob setting
 	// + fix: mouseup
-	// - bar-drag while hard-snap: snap other knob as well
+	// + bar-drag while hard-snap: snap other knob as well
+	// - bar-drag while hard-snap: run doOnSnap only on snap, on every snap
+	// - hard-snap knobs: better contraints when closing knobs
 	// for release: "separated 'disabled' from knob visibility, added noKnob setting"
 	function run(){
 		sglideArr = [];
@@ -52,7 +54,7 @@
 				'snap': {
 					'marks': true,
 					'type': 'hard',
-					// 'sensitivity': 1,
+					'sensitivity': 3,
 					'points': 5
 				},
 				'retina': false,
