@@ -702,6 +702,7 @@ function sGlideRange(self, options){
 
 		// snapping
 		var storedSnapValues = ['a-1', 'b-1'];
+		var storedBarSnapValue = null;
 		var doSnap = function(kind, m){
 			if (snaps > 0 && snaps < 10){	// min 1, max 9
 				var sense = settings.snap.sensitivity;
@@ -715,6 +716,7 @@ function sGlideRange(self, options){
 
 					// % to px
 					var snapPixelValues = [];
+					// var snapPixelValues = (!barDrag ? dynamicSnapValues(snapPixelValues, knobWidth) : []);
 					for (var j = 0; j < snapPctValues.length; j++){
 						snapPixelValues.push((self_width - knobWidth) * snapPctValues[j] / 100);
 					}
@@ -769,16 +771,16 @@ function sGlideRange(self, options){
 							if (barDrag){
 								if (Math.abs(closest_n - knob1.offsetLeft) < Math.abs(closest - knob2.offsetLeft)){
 									target = knob1;
-									updateSnap(closest_n, knobWidth);
+									snapUpdate(closest_n, knobWidth);
 									target = knob2;// reset
-									doOnSnap(closest_n, pctVal, 'from');
+									snapOutput(closest_n, pctVal, 'from');
 								} else {
-									updateSnap(closest, knobWidth);
-									doOnSnap(closest, pctVal, 'to');
+									snapUpdate(closest, knobWidth);
+									snapOutput(closest, pctVal, 'to');
 								}
-							} else {console.log('>> knob drag', closest);
-								updateSnap(closest, knobWidth, false, closest_n, pctVal);
-								doOnSnap(closest, pctVal, ((target === knob1) ? 'from' : 'to'));
+							} else {//console.log('>> knob drag', closest);
+								snapUpdate(closest, knobWidth, false, closest_n, pctVal);
+								snapOutput(closest, pctVal, (target === knob1 ? 'from' : 'to'));
 							}
 
 
@@ -786,47 +788,50 @@ function sGlideRange(self, options){
 							lockedRangeAdjusts();
 
 							if (Math.round(Math.abs(closest - m + knobWidthHalf/8)) < snapOffset){
-								updateSnap(closest, knobWidth, boolN);
-								doOnSnap(closest, pctVal, ((target === knob1) ? 'from' : 'to'));
+								snapUpdate(closest, knobWidth, boolN);
+								snapOutput(closest, pctVal, (target === knob1 ? 'from' : 'to'));
 
 							} else storedSnapValues = ['a-1', 'b-1'];
 						}
 					} else if (kind === 'hard'){
 						lockedRangeAdjusts();
-						updateSnap(closest, knobWidth, boolN);
+						snapUpdate(closest, knobWidth, boolN);
 						return closest;
 					} else {
 						lockedRangeAdjusts();
-						updateSnap(closest, knobWidth, boolN);	// animation not supported
+						snapUpdate(closest, knobWidth, boolN);	// animation not supported
 						return closest;
 					}
 				}
 			}
-		}, doOnSnap = function(a, b, which){ // callback: onSnap
-			console.log('>> snapper', a,b,which);
+		}, snapOutput = function(pxl, pct, which){ // callback: onSnap
+			// console.log('>> dynamicSnapValues', dynamicSnapValues());
 			var storedSnapIndex = 0;
 			var ab = null;
 
-			if (which == 'to'){
+			if (which === 'to'){
 				storedSnapIndex = 1;
-				ab = 'b'+b;
+				ab = 'b'+pct;
 			} else {
-				ab = 'a'+a;
+				ab = 'a'+pct;
 			}
 
-			if (options.onSnap && ab !== storedSnapValues[storedSnapIndex]){console.log('>> on snap', ab,storedSnapValues[storedSnapIndex]);
+			console.log('>> snapOutput', pct, snapPctValues);
+			if (options.onSnap && ab !== storedSnapValues[storedSnapIndex] || barDrag && ab !== storedBarSnapValue){
 				storedSnapValues[storedSnapIndex] = ab;
+				if (barDrag) storedBarSnapValue = ab;
 				var snapObj = null;
 
-				if (which == 'to')
-					snapObj = updateME(getPercent([(storedSnapValues[0].indexOf('-1') !== -1) ? THE_VALUES[0] : storedSnapValues[0], b]));
+				if (which === 'to')
+					snapObj = updateME(getPercent([(storedSnapValues[0].indexOf('-1') !== -1) ? THE_VALUES[0] : storedSnapValues[0], pct]));
 				else
-					snapObj = updateME(getPercent([b, (storedSnapValues[1].indexOf('-1') !== -1) ? THE_VALUES[1] : storedSnapValues[1]]));
+					snapObj = updateME(getPercent([pct, (storedSnapValues[1].indexOf('-1') !== -1) ? THE_VALUES[1] : storedSnapValues[1]]));
 
 				// time out to prevent value distortions
 				setTimeout(options.onSnap, 0, snapObj);
+				// options.onSnap(snapObj);
 			}
-		}, updateSnap = function(closest, knobWidth, isN, closest_n, pctVal){
+		}, snapUpdate = function(closest, knobWidth, isN, closest_n, pctVal){
 			var getFollowPos = function(){
 				return (closest+knobWidth/4+knobWidth/2);
 			};
@@ -871,6 +876,11 @@ function sGlideRange(self, options){
 					follow1.style.width	= (followPos-lockedDiff)+'px';
 				}
 			}
+		}, dynamicSnapValues = function(snapPixelValues, knobWidth){
+			// snapPixelValues
+			// knob values are prior to contraints. Must be post-contraint values
+			console.log('>> offsetLeft', knob1.offsetLeft+knobWidth, knob2.offsetLeft);
+			return snapPixelValues;
 		};
 
 		if (isMobile){
