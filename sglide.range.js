@@ -286,7 +286,7 @@ function sGlideRange(self, options){
 		// settings & variables
 
 		var settings = extend({
-			'startAt'		: 0,
+			'startAt'		: [0,0.00001],	// points cannot be the same as that will break barDrag snapping for first knob (weird)
 			'image'			: 'none',	// full path of image
 			'height'		: 40,
 			'width'			: 100,
@@ -773,14 +773,14 @@ function sGlideRange(self, options){
 									target = knob1;
 									snapUpdate(closest_n, knobWidth);
 									target = knob2;// reset
-									snapOutput(closest_n, pctVal, 'from');
+									snapOutput(pctVal, 'from');
 								} else {
 									snapUpdate(closest, knobWidth);
-									snapOutput(closest, pctVal, 'to');
+									snapOutput(pctVal, 'to');
 								}
 							} else {//console.log('>> knob drag', closest);
-								snapUpdate(closest, knobWidth, false, closest_n, pctVal);
-								snapOutput(closest, pctVal, (target === knob1 ? 'from' : 'to'));
+								snapUpdate(closest, knobWidth, false);
+								snapOutput(pctVal, (target === knob1 ? 'from' : 'to')); // pass result of snapUpdate
 							}
 
 
@@ -789,22 +789,18 @@ function sGlideRange(self, options){
 
 							if (Math.round(Math.abs(closest - m + knobWidthHalf/8)) < snapOffset){
 								snapUpdate(closest, knobWidth, boolN);
-								snapOutput(closest, pctVal, (target === knob1 ? 'from' : 'to'));
+								snapOutput(pctVal, (target === knob1 ? 'from' : 'to'));
 
 							} else storedSnapValues = ['a-1', 'b-1'];
 						}
-					} else if (kind === 'hard'){
-						lockedRangeAdjusts();
-						snapUpdate(closest, knobWidth, boolN);
-						return closest;
 					} else {
 						lockedRangeAdjusts();
-						snapUpdate(closest, knobWidth, boolN);	// animation not supported
+						snapUpdate(closest, knobWidth, boolN);
 						return closest;
 					}
 				}
 			}
-		}, snapOutput = function(pxl, pct, which){ // callback: onSnap
+		}, snapOutput = function(pct, which){ // callback: onSnap
 			// console.log('>> dynamicSnapValues', dynamicSnapValues());
 			var storedSnapIndex = 0;
 			var ab = null;
@@ -816,7 +812,7 @@ function sGlideRange(self, options){
 				ab = 'a'+pct;
 			}
 
-			console.log('>> snapOutput', pct, snapPctValues);
+			// console.log('>> snapOutput', pct, snapPctValues);
 			if (options.onSnap && ab !== storedSnapValues[storedSnapIndex] || barDrag && ab !== storedBarSnapValue){
 				storedSnapValues[storedSnapIndex] = ab;
 				if (barDrag) storedBarSnapValue = ab;
@@ -831,7 +827,7 @@ function sGlideRange(self, options){
 				setTimeout(options.onSnap, 0, snapObj);
 				// options.onSnap(snapObj);
 			}
-		}, snapUpdate = function(closest, knobWidth, isN, closest_n, pctVal){
+		}, snapUpdate = function(closest, knobWidth, isN){
 			var getFollowPos = function(){
 				return (closest+knobWidth/4+knobWidth/2);
 			};
@@ -845,8 +841,9 @@ function sGlideRange(self, options){
 				}
 
 				// constrain left knob to left side - glitch most evident at hard snap
+				// a prior constraint is already set, but you need this extra one - leave it active
 				if (closest > knob2.offsetLeft - (knobWidth/2))// && snapType === 'hard')
-					closest = knob2.offsetLeft - (knobWidth/2);
+					closest = knob2.offsetLeft - (knobWidth/2);window.closestDK = closest;
 
 				knob1.style.left	= closest+'px';
 				follow1.style.width	= (closest+knobWidth/4)+'px';
@@ -865,6 +862,7 @@ function sGlideRange(self, options){
 				}
 
 				// constrain right knob to right side - glitch most evident at hard snap
+				// a prior constraint is already set, but you need this extra one - leave it active
 				if (closest < knob1.offsetLeft)// && snapType === 'hard')
 					closest = knob1.offsetLeft;
 
@@ -897,6 +895,7 @@ function sGlideRange(self, options){
 		}
 
 		var z = null;
+		var a = false, b = false; // used to mitigate constraint checkers
 		eventDocumentMouseMove = function(e){
 			if (is_down){
 				e = e || event;	// ie fix
@@ -934,18 +933,28 @@ function sGlideRange(self, options){
 				if (e.returnValue) e.returnValue = false;
 
 				// constraint
-				if (!isLocked && !barDrag){// regular drag
+				if (!isLocked && !barDrag){// knob drag
 					if (target === knob1){// knob 1
 						var knob2_style_left	= knob2.style.left;
 						var knob2_offset_left	= knob2.offsetLeft;
 
 						if (x <= stopper){
-							target.style.left = '0';
-							follow1.style.width = stopper+'px';
+							if (b) b = false;
+							if (!a){
+								target.style.left = '0';
+								follow1.style.width = stopper+'px';
+								a = true;
+							}
 						} else if (x >= knob2_offset_left-stopper){
-							target.style.left = knob2_style_left;
-							follow1.style.width = (knob2_offset_left-stopper)+'px';
+							if (a) a = false;
+							if (!b){
+								target.style.left = knob2_style_left;
+								follow1.style.width = (knob2_offset_left-stopper)+'px';
+								if (snapType === 'hard') snapOutput(getPercent([result_from, result_to]).percentRange[1], 'from');
+								b = true;
+							}
 						} else {
+							a = b = false;
 							target.style.left = (x-stopper)+'px';
 							follow1.style.width = x+'px';
 							if (!snapType || snapType === 'hard') doSnap('drag', m);
@@ -955,12 +964,22 @@ function sGlideRange(self, options){
 						var knob1_offset_left	= knob1.offsetLeft;
 
 						if (x <= knob1_offset_left+stopper+knobWidth){
-							target.style.left = knob1_style_left;
-							follow2.style.width = (knob1_offset_left+stopper+knobWidth)+'px';
+							if (b) b = false;
+							if (!a){
+								target.style.left = knob1_style_left;
+								follow2.style.width = (knob1_offset_left+stopper+knobWidth)+'px';
+								if (snapType === 'hard') snapOutput(getPercent([result_from, result_to]).percentRange[0], 'to');
+								a = true;
+							}
 						} else if (x >= self_width-stopper){
-							target.style.left = (self_width-knobWidth*2)+'px';
-							follow2.style.width = (self_width-stopper)+'px';
+							if (a) a = false;
+							if (!b){
+								target.style.left = (self_width-knobWidth*2)+'px';
+								follow2.style.width = (self_width-stopper)+'px';
+								b = true;
+							}
 						} else {
+							a = b = false;
 							target.style.left = (x-stopper-knobWidth)+'px';
 							follow2.style.width = x+'px';
 							if (!snapType || snapType === 'hard') doSnap('drag', m);
@@ -1021,9 +1040,7 @@ function sGlideRange(self, options){
 			}
 		};
 		eventDocumentMouseUp = function(e){
-			is_down = false;
-			barDrag = false;
-			gotLockedPositions = false;
+			is_down = barDrag = gotLockedPositions = a = b = false;
 			z = null;
 			if (self.getAttribute('data-state') === 'active'){
 				if (snapType !== 'hard'){

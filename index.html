@@ -32,7 +32,7 @@
 	// + fix: mouseup
 	// + bar-drag while hard-snap: snap other knob as well
 	// + bar-drag while hard-snap: run snapOutput only on snap, on every snap
-	// - hard-snap knobs: better contraints when closing knobs
+	// + hard-snap knobs: better contraints when closing knobs
 	// for release: "separated 'disabled' from knob visibility, added noKnob setting"
 	function run(){
 		sglideArr = [];
@@ -41,7 +41,7 @@
 			elSettings	= document.getElementById('settings'),
 			elPct		= document.getElementById('percent'),
 			settings	= {
-				'startAt': [20, 60],
+				// 'startAt': [20, 60],
 				'width': 600,
 				'height': 22,
 				'unit': 'px',
@@ -53,7 +53,7 @@
 				'totalRange': [58,102],
 				'snap': {
 					'marks': true,
-					'type': 'hard',
+					// 'type': 'hard',
 					'sensitivity': 3,
 					'points': 5
 				},
@@ -97,7 +97,7 @@
 			// 'locked': true,
 			'snap': {
 				'marks': true,
-				'type': 'hard',
+				// 'type': 'hard',
 				'sensitivity': 3,
 				'points': 5
 			},
@@ -112,7 +112,7 @@
 				// console.log('> onSnap',o);
 				$pct.text(o.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%');
 			}
-		});*/
+		}); //$('#slider1').sGlideRange('startAt', [50, 58]);*/
 	};
 </script>
 
