@@ -4,10 +4,10 @@
 
 author:		Daniel Kazmer - http://webshifted.com
 created:	1.11.2014
-version:	1.2.1
+version:	1.3.0
 
 	version history:
-		1.2.1	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: get correct values at onSnap by sending them within setTimeout 0; cleaner: relying on offset values instead of style (type String) (26.04.2016)
+		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: get correct values at onSnap by sending them within setTimeout:0; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
 
@@ -40,7 +40,7 @@ version:	1.2.1
 	goals:
 		- test: positions of locked handles when startAt point specified
 		- if unit is %, then markers should be also
-		- fix bug: rebuilding vertical rotates again
+		- fix bug: rebuilding vertical rotates again (is this fixed already?)
 
 ***********************************************************************************/
 
@@ -58,8 +58,10 @@ version:	1.2.1
 				var vertContainer = $('#'+guid+'_vert-marks');
 				if (vertContainer[0]) self.unwrap();
 
-				var markers = $('#'+guid+'_markers');
-				if (markers.length > 0) markers.remove();
+				setTimeout(function(){
+					var markers = $('#'+guid+'_markers');
+					if (markers.length > 0) markers.remove();
+				}, 0);
 
 				var mEvt = {
 					'down'	: 'mousedown',
@@ -149,7 +151,7 @@ version:	1.2.1
 				// settings & variables
 
 				var settings = $.extend({
-					'startAt'		: [0,0.00001],	// points cannot be the same as that will break barDrag snapping for first knob (weird)
+					'startAt'		: [0,0],
 					'image'			: 'none',	// full path of image
 					'height'		: 40,
 					'width'			: 100,
@@ -197,6 +199,14 @@ version:	1.2.1
 					} else {
 						mEvt.down = 'touchstart'; mEvt.up = 'touchend'; mEvt.move = 'touchmove';
 					}
+				}
+
+				// start points cannot be identical as that will break barDrag snapping for first knob (weird)
+				if (settings.startAt[0] === settings.startAt[1]){
+					if (settings.startAt[1] === 100)
+						settings.startAt[0] -= 0.00001;
+					else
+						settings.startAt[1] += 0.00001;
 				}
 
 				// variables
@@ -676,10 +686,15 @@ version:	1.2.1
 					// -----------------------------
 
 					if ((target[0] === knob1[0] && !isN) || (target[0] === knob2[0] && isN)){
-						// patch: contraint right: if new knob2 pos > end knob2 pos, set new closest value;
+						// patch: constraint right: if new knob2 pos > end knob2 pos, set new closest value;
 						if ((isLocked || barDrag) && (closest+lockedDiff-knobWidth/2) > (self_width - knobWidth)){
 							closest -= (closest+lockedDiff-knobWidth/2) - (self_width - knobWidth);
 						}
+
+						// constrain left knob to left side - glitch most evident at hard snap
+						// a prior constraint is already set, but you need this extra one - leave it active
+						if (closest > knob2[0].offsetLeft - (knobWidth/2))// && snapType === 'hard')
+							closest = knob2[0].offsetLeft - (knobWidth/2);
 
 						knob1[0].style.left		= closest+'px';
 						follow1[0].style.width	= (closest+knobWidth/4)+'px';
@@ -694,6 +709,11 @@ version:	1.2.1
 							closest -= closest-lockedDiff+knobWidth/2;
 							followPos = getFollowPos();
 						}
+
+						// constrain right knob to right side - glitch most evident at hard snap
+						// a prior constraint is already set, but you need this extra one - leave it active
+						if (closest < knob1[0].offsetLeft)// && snapType === 'hard')
+							closest = knob1[0].offsetLeft;
 
 						knob2[0].style.left		= closest+'px';
 						follow2[0].style.width	= followPos+'px';
@@ -814,18 +834,27 @@ version:	1.2.1
 						} else {
 							if (targetEl === knob1El){
 								if (x <= stopper){
-									targetEl.style.left = '0';
-									follow1El.style.width = stopper+'px';
+									if (b) b = false;
+									if (!a){
+										targetEl.style.left = '0';
+										follow1El.style.width = stopper+'px';
 
-									knob2El.style.left = (lockedDiff-knobWidth)+'px';
-									follow2El.style.width = (lockedDiff+stopper)+'px';
+										knob2El.style.left = (lockedDiff-knobWidth)+'px';
+										follow2El.style.width = (lockedDiff+stopper)+'px';
+										a = true;
+									}
 								} else if (x >= self_width-lockedDiff-stopper){
-									knob2El.style.left = (self_width-knobWidth*2)+'px';
-									follow2El.style.width = (self_width-stopper)+'px';
+									if (a) a = false;
+									if (!b){
+										knob2El.style.left = (self_width-knobWidth*2)+'px';
+										follow2El.style.width = (self_width-stopper)+'px';
 
-									targetEl.style.left = (self_width-lockedDiff-knobWidth)+'px';
-									follow1El.style.width = (self_width-lockedDiff-stopper)+'px';
+										targetEl.style.left = (self_width-lockedDiff-knobWidth)+'px';
+										follow1El.style.width = (self_width-lockedDiff-stopper)+'px';
+										b = true;
+									}
 								} else {
+									a = b = false;
 									targetEl.style.left = (x-stopper)+'px';
 									follow1El.style.width = x+'px';
 
@@ -835,18 +864,27 @@ version:	1.2.1
 								}
 							} else if (targetEl === knob2El){
 								if (x <= lockedDiff+stopper){
-									targetEl.style.left = (lockedDiff-knobWidth)+'px';
-									follow2El.style.width = (lockedDiff+stopper)+'px';
+									if (b) b = false;
+									if (!a){
+										targetEl.style.left = (lockedDiff-knobWidth)+'px';
+										follow2El.style.width = (lockedDiff+stopper)+'px';
 
-									knob1El.style.left = '0';
-									follow1El.style.width = stopper+'px';
+										knob1El.style.left = '0';
+										follow1El.style.width = stopper+'px';
+										a = true;
+									}
 								} else if (x >= self_width-stopper){
-									targetEl.style.left = (self_width-knobWidth*2)+'px';
-									follow2El.style.width = (self_width-stopper)+'px';
+									if (a) a = false;
+									if (!b){
+										targetEl.style.left = (self_width-knobWidth*2)+'px';
+										follow2El.style.width = (self_width-stopper)+'px';
 
-									knob1El.style.left = (self_width-lockedDiff-knobWidth)+'px';
-									follow1El.style.width = (self_width-lockedDiff-stopper)+'px';
+										knob1El.style.left = (self_width-lockedDiff-knobWidth)+'px';
+										follow1El.style.width = (self_width-lockedDiff-stopper)+'px';
+										b = true;
+									}
 								} else {
+									a = b = false;
 									targetEl.style.left = (x-stopper-knobWidth)+'px';
 									follow2El.style.width = x+'px';
 

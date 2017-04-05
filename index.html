@@ -41,7 +41,7 @@
 			elSettings	= document.getElementById('settings'),
 			elPct		= document.getElementById('percent'),
 			settings	= {
-				// 'startAt': [20, 60],
+				'startAt': [25,58],
 				'width': 600,
 				'height': 22,
 				'unit': 'px',
@@ -58,7 +58,7 @@
 					'points': 5
 				},
 				'retina': false,
-				// 'vertical': true,
+				'vertical': true,
 				// 'disabled': true,
 				// 'noKnob': true,
 				drag: function(o){
@@ -75,7 +75,12 @@
 		for (var i = 0; i < elsArr.length; i++){
 			sglideArr.push(new sGlideRange(elsArr[i], settings));
 		}
-
+			
+		/*setTimeout(function(){
+			sglideArr[0].destroy();
+			sglideArr.splice(0, 1);
+			sglideArr.push(new sGlideRange(elsArr[0], settings));
+		}, 0);*/
 		// elSettings.innerText = JSON.stringify(settings, null, '\t');
 
 		// console.log('sglideArr',sglideArr);
@@ -83,8 +88,8 @@
 		// -------------------------------------------------------------------------------------------------------
 
 		/*var $pct = $('#percent');
-		$('#slider1').sGlideRange({
-			'startAt': [25, 58],
+		$('#slider1').sGlideRange(settings = {
+			'startAt': [25,58],
 			'width': 600,
 			'height': 44,
 			'unit': 'px',
@@ -97,11 +102,11 @@
 			// 'locked': true,
 			'snap': {
 				'marks': true,
-				// 'type': 'hard',
+				'type': 'hard',
 				'sensitivity': 3,
 				'points': 5
 			},
-			// 'vertical': true,
+			'vertical': true,
 			// 'disabled': true,
 			// 'noKnob': true,
 			drag: function(o){
@@ -112,7 +117,11 @@
 				// console.log('> onSnap',o);
 				$pct.text(o.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%');
 			}
-		}); //$('#slider1').sGlideRange('startAt', [50, 58]);*/
+		}); //$('#slider1').sGlideRange('startAt', [50, 58]);
+
+		setTimeout(function(){
+			$('#slider1').sGlideRange('destroy').sGlideRange(settings);
+		}, 0);*/
 	};
 </script>
 
