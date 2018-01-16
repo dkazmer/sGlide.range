@@ -1,24 +1,25 @@
 sGlide.range
 ============
 
-A derivative of sGlide. Select the range between custom min and max numbers. Returns selected range numbers and percentage values. Uses optional smart snapping. Apply your own CSS.
+A derivative of sGlide. Select the range between custom min and max numbers. Returns selected range numbers and corresponding percentage values. Uses optional smart snapping. Apply your own CSS.
+
+For details, visit http://webshifted.com/sGlide.range/
 
 Quickstart Guide: apply the following to an empty DIV with a unique id.
 
-	// jQuery:
-	// $('#slider').sGlideRange({
-	// jQuery independent:
-	var my_sGlide_instance = new sGlideRange(my_element, {
+	var callback = o => {};
+	var options = {
 		startAt: [20, 60],	// percentages of totalRange
-		width: 600,
-		height: 20,
-		unit: 'px',
+		width: 80,		// % of parent node (default)
 		totalRange: [58, 102],
 		snap: {
 			points: 5,
 			marks: true
 		},
-		drop: function(o){
-			// 'o' Object returned
-		}
-	});
+		drop: callback
+	};
+	
+	// Standalone
+	var sGlide_instance = new sGlideRange(el, options);
+	// or jQuery
+	$('#slider').sGlideRange(options);
