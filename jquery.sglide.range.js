@@ -462,6 +462,7 @@ version:	2.0.0
 				// snap to
 				var snapping_on = false;
 				var snaps = Math.round(settings.snap.points);
+				var marks = null;
 				var snapPctValues = [0];
 				var snapPxlValues = [0];
 
@@ -500,7 +501,6 @@ console.log('>> pcts', snapPctValues);
 
 				var drawSnapmarks = function(){
 					var kw_ = knob1.width();
-					var marks = null;
 
 					self.after('<div id="'+guid+'_markers"></div>');
 					
@@ -929,6 +929,7 @@ console.log('>> pcts', snapPctValues);
 						// update values
 						if (options.drag && self.data('state') === 'active'){
 							var value = updateME.apply(this, getPercent(result_from, result_to));
+							valueObj[guid] = value;
 							options.drag.call(self[0], value);
 						}
 					}
@@ -961,6 +962,8 @@ console.log('>> pcts', snapPctValues);
 							}
 
 							var value = updateME.apply(this, getPercent(result_from, result_to));
+
+							if (options.drop || options.drag) valueObj[guid] = value;
 
 							if (options.drop) options.drop.call(self[0], value);
 							if (options.drag && state === 'active') options.drag.call(self[0], value);
@@ -999,6 +1002,28 @@ console.log('>> pcts', snapPctValues);
 							is_down = barDrag = false;
 						});
 					}
+
+					$(window).on('resize.'+guid, function(){
+						var val = null;
+						var kw1	= knob1.width();
+						var pos	= (function(arr){
+							for (var i = 0; i < valueObj[guid].length; i++){
+								arr.push(valueObj[guid][i] / 100 * (self.width() - kw1) + (kw1/2));
+							}
+							return arr;
+						})([]);
+
+						self_width = self.width();
+						self.sGlideRange('startAt', valueObj[guid]);
+
+						if (marks){
+							marks.css('width', self_width)
+							.children('div').each(function(i, mark){
+								val = (self_width - kw1*2) / (snaps-1) * i + kw1;
+								$(mark).css('left', val);
+							});
+						}
+					});
 				};
 
 				//------------------------------------------------------------------------------------------------------------------------------------
