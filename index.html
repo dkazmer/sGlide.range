@@ -42,10 +42,10 @@
 			elPct		= document.getElementById('percent'),
 			callback	= function(o){
 				console.log('>> this', o);
-				elPct.innerHTML = this.id+': '+Math.round(o.percentRange[0]) + ' - ' + Math.round(o.percentRange[1]) + '%';
+				elPct.innerHTML = this.id+': '+Math.round(o.percentRange[0]) + ' &mdash; ' + Math.round(o.percentRange[1]) + '%';
 			},
 			settings	= {
-				'startAt': [25,75],
+				'startAt': [15,85],
 				'width': 60,
 				'height': 22,
 				// 'unit': 'px',
