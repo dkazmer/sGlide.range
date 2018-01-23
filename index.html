@@ -46,6 +46,7 @@
 			},
 			settings	= {
 				'startAt': [15,85],
+				// 'startAt': [25,75],
 				'width': 60,
 				'height': 22,
 				// 'unit': 'px',
@@ -57,7 +58,7 @@
 				'totalRange': [58,102],
 				'snap': {
 					'marks': true,
-					// 'type': 'hard',
+					'type': 'soft',
 					'sensitivity': 3,
 					'points': 5
 				},
@@ -89,7 +90,7 @@
 		$('#slider1').on('sGlide.ready', function(e, data){
 			console.log('>> ready', this, data);
 			// $(this).sGlideRange('destroy');
-		}).sGlideRange(settings); //$('#slider1').sGlideRange('startAt', [50, 58]);
+		}).sGlideRange(settings, true); //$('#slider1').sGlideRange('startAt', [50, 58]);
 
 		// setTimeout(function(){
 		// 	$('#slider1').sGlideRange('destroy').sGlideRange(settings);
