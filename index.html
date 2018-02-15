@@ -20,6 +20,8 @@
 #slider1_vert-marks {margin-left: -60px !important;}
 </style>
 
+<script type="text/javascript" src="../nodeListener/nodelistenerES6notify.js"></script>
+
 <script src="http://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
 <script type="text/javascript" src="jquery.sglide.range.js"></script>
 <!-- <script type="text/javascript" src="sglide.range.js"></script> -->
@@ -28,7 +30,6 @@
 
 <script type="text/javascript">
 	// + fix: barDrag disabled
-	// + add: noKnob setting
 	// + fix: mouseup
 	// + bar-drag while hard-snap: snap other knob as well
 	// + bar-drag while hard-snap: run snapOutput only on snap, on every snap
@@ -65,7 +66,7 @@
 				'retina': false,
 				// 'vertical': true,
 				// 'disabled': true,
-				'noKnob': true,
+				'noHandle': true,
 				// 'drag': callback,
 				'onSnap': callback
 			};

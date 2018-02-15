@@ -2,12 +2,12 @@
 
 /***********************************************************************************
 
-author:		Daniel Kazmer - http://webshifted.com
+author:		Daniel B. Kazmer (webshifted.com)
 created:	1.11.2014
 version:	2.0.0
 
 	version history:
-		2.0.0	
+		2.0.0	retina setting default set to false ...
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
@@ -163,12 +163,12 @@ version:	2.0.0
 						'type'		: false,
 						'points'	: 0
 					},
+					'totalRange'	: [0,0],
 					'disabled'		: false,
 					'vertical'		: false,
-					'totalRange'	: [0,0],
 					'locked'		: false,
 					'noHandle'		: false,
-					'retina'		: true
+					'retina'		: false
 				}, options);
 
 				self.removeAttr('style');	// remove user inline styles
@@ -588,7 +588,6 @@ version:	2.0.0
 							// get closest px mark, and set %
 							var closest = null, pctVal = 0;
 							$.each(snapPxlValues, function(i, num){
-								// console.log('>> n1', num);
 								if (closest === null || Math.abs(num - m) < Math.abs(closest - m)){
 									closest = num;// | 0.0;
 									pctVal = snapPctValues[i];
@@ -682,23 +681,20 @@ version:	2.0.0
 								// snapUpdate(closest, knobWidth, boolN);
 
 								if (barDrag_drop){
-									// console.log('>> >>', storedSnapValues, valueObj[guid]);
 									// if (storedSnapValues[0] !== valueObj[guid][0] || storedSnapValues[1] !== valueObj[guid][1]) is_onSnapPoint = true;
 									// valueObj[guid] = storedSnapValues;
-									console.log('>> cl', knob1[0].offsetLeft, knob2[0].offsetLeft);
 									if (Math.abs(closest_n - knob1[0].offsetLeft) < Math.abs(closest - knob2[0].offsetLeft)){
-										console.log('>> Aa');
 										target = knob1;
 										snapUpdate(closest_n, knobWidth);
 										was_onSnapPoint_right = true;
 										target = knob2;// reset
 										return closest_n;
-									} else {console.log('>> Bb');
+									} else {
 										snapUpdate(closest, knobWidth);
 										was_onSnapPoint_left = true;
 										return closest;
 									}
-								} else {console.log('>> Cc');
+								} else {
 									switch (target[0]){
 										case knob1[0]: was_onSnapPoint_left = true; break;
 										case knob2[0]: was_onSnapPoint_right = true; break;
@@ -777,7 +773,7 @@ version:	2.0.0
 							knob2.css('left', diff()).data('px', diff());
 							follow2.css('width', (closest+knobWidth/4+lockedDiff));
 						}
-console.log('>> A');
+
 						// output
 						if (was_onSnapPoint_left){
 							snapOutput(0, closest);
@@ -807,7 +803,7 @@ console.log('>> A');
 							knob1.css('left', diff()).data('px', diff());
 							follow1.css('width', (followPos-lockedDiff));
 						}
-console.log('>> B');
+
 						// output
 						if (was_onSnapPoint_right){
 							snapOutput(1, closest);
@@ -1023,22 +1019,32 @@ console.log('>> B');
 						if (snapType !== 'hard'){
 							e = e || event;	// ie fix
 							var x = null, base = 0;
+							var knobWidth	= knobs.width();
 
 							if (vert){
 								base = self.position().top + self_width;
 								x = base - ((!isMobile ? e.pageY : touchY)-2);
 							} else x = (!isMobile ? e.pageX : touchX) - self.offset().left;
-							
-							var knobWidth	= knobs.width();
+
+							if (barDrag_drop){
+								if (z === null) z = target[0].offsetLeft - x + (knobWidth / 2);
+								// if (z === null) z = target.data('px') + knobWidth - x + knobWidth / 2;
+								x += z;
+								if (!gotLockedPositions) getLockedPositions();
+							}
+
 							var stopper		= (target[0] === knob2[0]) ? knobWidth * 1.5 : knobWidth / 2;
 							var m			= x - stopper;	// true position of knob
 
 							// snap to
-							if (is_snap && snapType === 'soft'){
-								if (target[0] === knob1[0] && m <= knob2[0].offsetLeft)
-									result_from = doSnap('soft', m);
-								else if (target[0] === knob2[0] && m >= knob1[0].offsetLeft)
-									result_to = doSnap('soft', m);
+							if (barDrag_drop) doSnap('soft', x);
+							else {
+								if (is_snap && snapType === 'soft'){
+									if (target[0] === knob1[0] && m <= knob2[0].offsetLeft)
+										result_from = doSnap('soft', m);
+									else if (target[0] === knob2[0] && m >= knob1[0].offsetLeft)
+										result_to = doSnap('soft', m);
+								}
 							}
 
 							var value = updateME.apply(this, getPercent(result_from, result_to));
@@ -1049,12 +1055,12 @@ console.log('>> B');
 						}
 						self.data('state', 'inactive');
 					}
-					barDrag_drop = false
-					;
+					gotLockedPositions = barDrag_drop = false;
+					z = null;
 				};
 
 				var snapDragon = function(m){
-					if (!snapType || snapType === 'hard') doSnap('drag', m);
+					if (is_snap && !snapType || snapType === 'hard') doSnap('drag', m);
 				}
 
 				var initEventHandlers = function(){
