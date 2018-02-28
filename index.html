@@ -17,14 +17,13 @@
 /*#slider1 {transform-origin: 460px 260px !important;}*/
 /*#slider2 {margin: -130px -290px !important;}*/
 /*#slider1 {margin-left: 60px !important;}*/
-#slider1_vert-marks {margin-left: -60px !important;}
 </style>
 
-<script type="text/javascript" src="../nodeListener/nodelistenerES6notify.js"></script>
+<!-- <script type="text/javascript" src="../nodeListener/nodelistenerES6notify.js"></script> -->
 
 <script src="http://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="jquery.sglide.range.js"></script>
-<!-- <script type="text/javascript" src="sglide.range.js"></script> -->
+<script type="text/javascript" src="jquery.sglide.range_es6.js"></script>
+<!-- <script type="text/javascript" src="sglide.range_es6.js"></script> -->
 <!-- <script type="text/javascript" src="../../~web~/sGlide/jquery.sglide.2.min.js"></script> -->
 <!-- <script type="text/javascript" src="../../~web~/sGlide/sglide.2.min.js"></script> -->
 
@@ -37,12 +36,12 @@
 	// for release: "separated 'disabled' from knob visibility, added noKnob setting"
 	function run(){
 		instances = [];
-		// var elsArr = document.getElementsByClassName('slider_bar');
-		var nodes		= document.querySelectorAll('#slider1'),
+		var nodes = document.getElementsByClassName('slider_bar'),
+		// var nodes		= document.querySelectorAll('#slider1'),
 			elSettings	= document.getElementById('settings'),
 			elPct		= document.getElementById('percent'),
 			callback	= function(o){
-				console.log('>> this', o);
+				// console.log('>> this', o);
 				elPct.innerHTML = this.id+': '+Math.round(o.percentRange[0]) + ' &mdash; ' + Math.round(o.percentRange[1]) + '%';
 			},
 			settings	= {
@@ -51,29 +50,31 @@
 				'width': 60,
 				'height': 22,
 				// 'unit': 'px',
-				// 'image': 'img/knob_.png',
+				'image': 'img/knob_.png',
 				// 'image': ['img/knob_.png','img/knob_.png'],
-				'image': ['img/images/range_knob_01.png', 'img/images/range_knob_02.png'],
+				// 'image': ['img/images/range_knob_01.png', 'img/images/range_knob_02.png'],
 				'pill': false,
 				// 'locked': true,//(i === 0) ? true : false,
 				'totalRange': [58,102],
 				'snap': {
 					'marks': true,
 					'type': 'soft',
-					'sensitivity': 3,
-					'points': 5
+					// 'sensitivity': 3,
+					'points': 8
 				},
-				'retina': false,
+				// 'retina': false,
 				// 'vertical': true,
 				// 'disabled': true,
-				'noHandle': true,
+				// 'noHandle': true,
 				// 'drag': callback,
 				'onSnap': callback
 			};
 
 		/*nodes = Array.prototype.slice.call(nodes);
 		for (var el of nodes){
-			instances.push(new sGlideRange(el, settings));
+			instances.push(new sGlideRange(el, settings).load(function(o){
+				console.log('>> load!', o, this);
+			}));
 		}*/
 			
 		/*setTimeout(function(){
@@ -88,7 +89,7 @@
 		// -------------------------------------------------------------------------------------------------------
 
 		var $pct = $('#percent');
-		$('#slider1').on('sGlide.ready', function(e, data){
+		$('.slider_bar').on('sGlide.ready', function(e, data){
 			console.log('>> ready', this, data);
 			// $(this).sGlideRange('destroy');
 		}).sGlideRange(settings, true); //$('#slider1').sGlideRange('startAt', [50, 58]);

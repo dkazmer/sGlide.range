@@ -4,7 +4,7 @@
 
 author:		Daniel B. Kazmer (webshifted.com)
 created:	11.11.2014
-version:	1.3.0
+version:	2.0.0 -es6
 
 	version history:
 		2.0.0	retina setting default set to false ...
@@ -82,17 +82,17 @@ function sGlideRange(self, options){
 	// public methods
 
 	this.destroy = function(){
-		var guid = self.getAttribute('id');
+		const guid = self.getAttribute('id');
 
 		// unwrap vertical buttons
-		var vertContainer = $('#'+guid+'_vert-marks');
+		const vertContainer = $('#'+guid+'_vert-marks');
 		if (vertContainer){
-			var vertParent = vertContainer.parentNode;
+			const vertParent = vertContainer.parentNode;
 			vertParent.insertBefore(self, vertContainer.nextSibling);
 			vertParent.removeChild(vertContainer);
 		}
 
-		var markers = $('#'+guid+'_markers');
+		const markers = $('#'+guid+'_markers');
 		if (markers) markers.parentNode.removeChild(markers);
 
 		if (isMobile)
@@ -114,7 +114,7 @@ function sGlideRange(self, options){
 		self.removeAttribute('data-state');
 		self.classList.remove('vertical');
 
-		for (var i in this) delete this[i];
+		for (let i in this) delete this[i];
 	};
 
 	this.startAt = function(pct, pctTo){
@@ -130,7 +130,7 @@ function sGlideRange(self, options){
 
 		startAt = pct;
 
-		var selfWidth	= self.offsetWidth,
+		const selfWidth	= self.offsetWidth,
 			knobWidth	= knob1.offsetWidth * 2,
 			px			= [],
 			pxAdjust	= [];
@@ -160,14 +160,33 @@ function sGlideRange(self, options){
 	};
 
 	var callback = null;
-	var notifier = function(fn){ callback = fn; };
-	// self.addEventListener('sGlide.ready', function(data){ if (callback) callback.call(that, data.detail); });
+	const notifier = fn => { callback = fn; };
 	this.load = notifier;
 
 	//------------------------------------------------------------------------------------------------------------------------------------
 	// private global functions
 
-	var $ = function(name, c){
+	const loadKnobImgs = (paths, cb) => {
+		var imgArray	= paths || [];
+		var promises	= [];
+
+		if (!imgArray.length) return;
+
+		imgArray.forEach((item, i) => {
+			promises.push(new Promise(resolve => {
+				var img = new Image();
+				img.onload = () => {
+					cb(img, i);
+					resolve();
+				};
+				img.src = item;
+			}));
+		});
+
+		return Promise.all(promises);
+	};
+
+	const $ = (name, c) => {
 		if (!c)
 			return document.querySelectorAll(name);
 		return c.querySelectorAll(name);
@@ -175,21 +194,21 @@ function sGlideRange(self, options){
 
 	function wrapAll(elements, wrapperStr){
 		// set wrapper element
-		var a = document.createElement('div');
+		const a = document.createElement('div');
 		a.innerHTML = wrapperStr;
-		var wrapperEl = a.childNodes[0];
+		const wrapperEl = a.childNodes[0];
 		elements[0].parentNode.insertBefore(wrapperEl, elements[0]);
 
 		// append it
-		for (var i = 0; i < elements.length; i++) wrapperEl.appendChild(elements[i]);
-	}
+		for (let i = 0; i < elements.length; i++) wrapperEl.appendChild(elements[i]);
+	};
 
 	function clone(obj){
 		if (obj === null || typeof(obj) != 'object') return obj;
 
-		var temp = obj.constructor(); // changed
+		const temp = obj.constructor(); // changed
 
-		for (var key in obj){
+		for (let key in obj){
 			if (obj.hasOwnProperty(key)){
 				temp[key] = clone(obj[key]);
 			}
@@ -200,7 +219,7 @@ function sGlideRange(self, options){
 
 	// from https://gist.github.com/pbojinov/8f3765b672efec122f66
 	function extend(destination, source){
-		for (var property in source){
+		for (let property in source){
 			if (source[property] && source[property].constructor && source[property].constructor === Object){
 				destination[property] = destination[property] || {};
 				arguments.callee(destination[property], source[property]);
@@ -212,22 +231,22 @@ function sGlideRange(self, options){
 	}
 
 	function css(el, styles, prefixes){
-		var cssString = '';
+		let cssString = '';
 
 		if (prefixes){
-			var temp = {};
-			for (var key in styles){
+			let temp = {};
+			for (let key in styles){
 				if (styles.hasOwnProperty(key)){
-					for (var i = 0; i < prefixes.length; i++){
-						temp[prefixes[i]+key] = styles[key];
+					for (let prefix of prefixes){
+						temp[prefix+key] = styles[key];
 					}
 				}
 			}
 			styles = temp;
 		}
 
-		for (var key in styles){
-			var s = styles[key];
+		for (let key in styles){
+			let s = styles[key];
 			if (styles.hasOwnProperty(key)){
 				// cssString += key + ':' + styles[key] + ';';
 				cssString += key + ':' + (typeof s === 'number' ? s + 'px' : s) + ';';
@@ -238,7 +257,7 @@ function sGlideRange(self, options){
 		return el;
 	}
 
-	(function(document, that){
+	((document, that) => {
 
 		//------------------------------------------------------------------------------------------------------------------------------------
 		// validate params
@@ -321,22 +340,22 @@ function sGlideRange(self, options){
 
 		// local variables
 		var THE_VALUES		= startAt = settings.startAt,
+			self_height		= Math.round(settings.height)+'px',
+			MSoffsetTop		= null,
+			vmarks			= null,
 			result_from		= 0,
 			result_to		= 0,
-			vert			= settings.vertical,
+			knob_bg			= '#333',
+			knob_width_css	= (settings.noHandle ? '0' : '2%'),
+			knob_height_css	= 'inherit';
+		const	vert			= settings.vertical,
 			is_snap			= (settings.snap.points > 0 && settings.snap.points <= 11),
 			markers			= (is_snap && settings.snap.marks),
 			snapType		= (settings.snap.type != 'hard' && settings.snap.type != 'soft') ? false : settings.snap.type,
-			knob_bg			= '#333',
-			knob_width_css	= (settings.noHandle ? '0' : '2%'),
-			knob_height_css	= 'inherit',
-			self_height		= Math.round(settings.height)+'px',
 			r_corners		= settings.pill,
 			imageBln		= (settings.image != 'none' && settings.image !== '' && !settings.noHandle),
 			retina			= (window.devicePixelRatio > 1) && settings.retina,
 			customRange		= (settings.totalRange[0] !== 0 || settings.totalRange[1] !== 0) && settings.totalRange[0] < settings.totalRange[1],
-			MSoffsetTop		= null,
-			vmarks			= null,
 			isLocked		= settings.locked;
 
 		// store data to element
@@ -358,166 +377,80 @@ function sGlideRange(self, options){
 			img = settings.image;
 
 			// string or array
-			var multiImageBln = img instanceof Array;
+			img = (img instanceof Array) ? img : [img, img];
 
-			var processRetinaImage = function(file){
-				var rImgTemp = file.split('.');
-				var rImgTemp_length = rImgTemp.length;
+			const processRetinaImage = file => {
+				const rImgTemp = file.split('.');
+				const rImgTemp_length = rImgTemp.length;
 
 				rImgTemp[rImgTemp_length-2] = rImgTemp[rImgTemp_length-2] + '@2x';
 				file = '';
-				for (var i = 0; i < rImgTemp_length; i++){
+				for (let i = 0; i < rImgTemp_length; i++){
 					file += rImgTemp[i] + ((i < rImgTemp_length-1) ? '.' : '');
 				}
 
 				return file;
 			};
 
-			if (multiImageBln){
-				// retina handling
+			const imageLoaded = (image, i) => {
+				let newImage = image;
+				let el = knobs[i];
+				let path = img[i];
+				// let multiImageIndex = 0;
+				let thisHeight = newImage.naturalHeight;
+
 				if (retina){
-					img[0] = processRetinaImage(img[0]);
-					img[1] = processRetinaImage(img[1]);
+					newImage.style.width	= (newImage.naturalWidth/2)+'px';
+					thisHeight				= newImage.offsetHeight;
+					knob_width_css			= newImage.offsetWidth+'px';
+					knob_height_css			= thisHeight+'px';
+				} else {
+					knob_width_css			= newImage.naturalWidth+'px';
+					knob_height_css			= thisHeight+'px';
 				}
 
-				for (var ki = 0; ki < knobs.length; ki++){
-					knobs[ki].innerHTML = '<img src="" style="visibility:hidden; position:absolute" />';
+				knob_bg = 'url('+path+') no-repeat';
 
-					/*var image = new Image();
-					image.onload = imageLoad;
-					image.src = path;
-					knobs[ki].appendChild(image);*/
+				// apply knob image styles
+				el.style.width		= knob_width_css;
+				el.style.height		= knob_height_css;
+				el.style.background	= knob_bg;
+				if (retina) el.style.backgroundSize = '100%';
+
+				css(follows[i], {
+					'height': knob_height_css,
+					'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0'
+				});
+
+				if (i === 0){
+					css(self, {
+						'height': knob_height_css,
+						'border-radius': r_corners ? thisHeight / 2 + 'px' : '0'
+					});
 				}
 
-				var newImage = null;//new Image();
-				var multiImageIndex = 0;
-				var loadNextImage = function(el){
-					newImage = el.children[0];
-					newImage.setAttribute('src', img[multiImageIndex]);
-					newImage.onload = function(){
-						var thisHeight = newImage.naturalHeight;
+				{
+					let settings_height = settings.height;
+					if (thisHeight > settings_height){
+						var knobMarginValue = (thisHeight-settings_height)/2;
+						
+						self.style.height = settings_height+'px';
 
-						if (retina){
-							newImage.style.width	= (newImage.naturalWidth/2)+'px';
-							thisHeight				= newImage.offsetHeight;
-							knob_width_css			= newImage.offsetWidth+'px';
-							knob_height_css			= thisHeight+'px';
-						} else {
-							knob_width_css			= newImage.naturalWidth+'px';
-							knob_height_css			= thisHeight+'px';
+						for (ib = 0; ib < knobs.length; ib++){
+							knobs[ib].style.top				= '-'+knobMarginValue+'px';
+							follows[ib].style.height		= settings_height+'px';
+							follows[ib].style.borderRadius	= r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0';
 						}
-
-						knob_bg = 'url('+img[multiImageIndex]+') no-repeat';
-
-						// apply knob image styles
-						el.style.width		= knob_width_css;
-						el.style.height		= knob_height_css;
-						el.style.background	= knob_bg;
-						if (retina) el.style.backgroundSize = '100%';
-
-						el.removeChild(newImage);
-
-						if (multiImageIndex < 1){
-							multiImageIndex++;
-							loadNextImage(knob2);
-						} else {
-							for (var ib = 0; ib < knobs.length; ib++){
-								css(follows[ib], {
-									'height': knob_height_css,
-									'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0'
-								});
-							}
-							css(self, {
-								'height': knob_height_css,
-								'border-radius': r_corners ? thisHeight / 2 + 'px' : '0'
-							});
-
-							imgLoaded = true;
-
-							var settings_height = settings.height;
-							if (thisHeight > settings_height){
-								var knobMarginValue = (thisHeight-settings_height)/2;
-								
-								self.style.height = settings_height+'px';
-
-								for (ib = 0; ib < knobs.length; ib++){
-									knobs[ib].style.top				= '-'+knobMarginValue+'px';
-									follows[ib].style.height		= settings_height+'px';
-									follows[ib].style.borderRadius	= r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0';
-								}
-							} else {
-								// children stay inside parent
-								self.style.overflow = 'hidden';
-							}
-
-							window.dispatchEvent(eventMakeReady);
-						}
-					};
-				};
-				loadNextImage(knob1);
-			} else {
-				// retina handling
-				if (retina) img = processRetinaImage(img);
-
-				for (var ki = 0; ki < knobs.length; ki++)
-					knobs[ki].innerHTML = '<img src="'+img+'" style="visibility:hidden; position:absolute" />';
-
-				knob1.children[0].onload = function(){
-					var imgEl = [];
-
-					for (var ic = 0; ic < knobs.length; ic++) {
-						imgEl.push(knobs[ic].children[0]);
-						var thisHeight = imgEl[ic].naturalHeight;
-
-						if (retina){
-							imgEl[ic].style.width	= (imgEl[ic].naturalWidth/2)+'px';
-							thisHeight				= imgEl[ic].offsetHeight;
-							knob_width_css			= imgEl[ic].offsetWidth+'px';
-							knob_height_css			= thisHeight+'px';
-						} else {
-							knob_width_css			= imgEl[ic].naturalWidth+'px';
-							knob_height_css			= thisHeight+'px';
-						}
-
-						knob_bg = 'url('+img+') no-repeat';
-
-						// apply knob image styles
-						knobs[ic].style.width		= knob_width_css;
-						knobs[ic].style.height		= knob_height_css;
-						knobs[ic].style.background	= knob_bg;
-						if (retina) knobs[ic].style.backgroundSize = '100%';
-
-						css(follows[ic], {
-							'height': knob_height_css,
-							'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0'
-						});
-						// style only once
-						if (ic === 0){
-							css(self, {
-								'height': knob_height_css,
-								'border-radius': r_corners ? thisHeight / 2 + 'px' : '0'
-							});
-						}
-
-						knobs[ic].removeChild(imgEl[ic]);
-
-						var settings_height = settings.height;
-						if (thisHeight > settings_height){
-							var knobMarginValue = (thisHeight-settings_height)/2;
-									
-							self.style.height				= settings_height+'px';
-							knobs[ic].style.top				= '-'+knobMarginValue+'px';
-							follows[ic].style.height		= settings_height+'px';
-							follows[ic].style.borderRadius	= r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0';
-						} else {
-							// children stay inside parent
-							self.style.overflow = 'hidden';
-						}
+					} else {
+						// children stay inside parent
+						self.style.overflow = 'hidden';
 					}
+				}
+			};
 
-					window.dispatchEvent(eventMakeReady);
-				};
-			}
+			loadKnobImgs(img, imageLoaded).then(() => {
+				window.dispatchEvent(eventMakeReady);
+			});
 		} else {
 			var d = settings.height / 2;
 			css(self, {'border-radius': (r_corners ? d+'px' : '0'), 'overflow': 'hidden'});
