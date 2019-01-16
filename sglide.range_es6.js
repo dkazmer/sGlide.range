@@ -397,9 +397,8 @@ function sGlideRange(self, options){
 			};
 
 			if (retina){
-				for (let ig of img){
-					ig = processRetinaImage(ig);
-					// console.log('>> ig', ig);
+				for (let i = 0; i < img.length; i++){
+					img[i] = processRetinaImage(img[i]);
 				}
 			}
 
@@ -411,13 +410,11 @@ function sGlideRange(self, options){
 				let thisHeight = newImage.naturalHeight;
 
 				if (retina){
-					newImage.style.width	= (newImage.naturalWidth/2)+'px';
-					thisHeight				= newImage.offsetHeight;
-					knob_width_css			= newImage.offsetWidth+'px';
-					knob_height_css			= thisHeight+'px';
+					knob_width_css	= newImage.naturalWidth/2+'px';
+					knob_height_css	= thisHeight/2+'px';
 				} else {
-					knob_width_css			= newImage.naturalWidth+'px';
-					knob_height_css			= thisHeight+'px';
+					knob_width_css	= newImage.naturalWidth+'px';
+					knob_height_css	= thisHeight+'px';
 				}
 
 				knob_bg = 'url('+path+') no-repeat';
@@ -443,8 +440,9 @@ function sGlideRange(self, options){
 				{
 					let settings_height = settings.height;
 					if (thisHeight > settings_height){
-						var knobMarginValue = (thisHeight-settings_height)/2;
-						
+						let knobMarginValue = (thisHeight-settings_height)/2;
+						if (retina) knobMarginValue = (thisHeight/2-settings_height)/2;
+
 						self.style.height = settings_height+'px';
 
 						for (ib = 0; ib < knobs.length; ib++){
@@ -459,9 +457,7 @@ function sGlideRange(self, options){
 				}
 			};
 
-			loadKnobImgs(img, imageLoaded).then(() => {
-				window.dispatchEvent(eventMakeReady);
-			});
+			loadKnobImgs(img, imageLoaded).then(() => window.dispatchEvent(eventMakeReady));
 		} else {
 			var d = settings.height / 2;
 			css(self, {'border-radius': (r_corners ? d+'px' : '0'), 'overflow': 'hidden'});
