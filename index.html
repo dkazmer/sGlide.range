@@ -21,9 +21,10 @@
 
 <!-- <script type="text/javascript" src="../nodeListener/nodelistenerES6notify.js"></script> -->
 
-<script src="http://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="jquery.sglide.range_es6.js"></script>
-<!-- <script type="text/javascript" src="sglide.range_es6.js"></script> -->
+<!-- <script src="http://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script> -->
+<!-- <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>
+<script type="text/javascript" src="jquery.sglide.range_es6.js"></script> -->
+<script type="text/javascript" src="sglide.range_es6.js"></script>
 <!-- <script type="text/javascript" src="../../~web~/sGlide/jquery.sglide.2.min.js"></script> -->
 <!-- <script type="text/javascript" src="../../~web~/sGlide/sglide.2.min.js"></script> -->
 
@@ -45,8 +46,8 @@
 				elPct.innerHTML = this.id+': '+Math.round(o.percentRange[0]) + ' &mdash; ' + Math.round(o.percentRange[1]) + '%';
 			},
 			settings	= {
-				'startAt': [15,85],
-				// 'startAt': [25,75],
+				// 'startAt': [15,85],
+				'startAt': [25,75],
 				'width': 60,
 				'height': 22,
 				// 'unit': 'px',
@@ -60,9 +61,9 @@
 					'marks': true,
 					'type': 'soft',
 					// 'sensitivity': 3,
-					'points': 8
+					'points': 5
 				},
-				// 'retina': false,
+				'retina': true,
 				// 'vertical': true,
 				// 'disabled': true,
 				// 'noHandle': true,
@@ -70,12 +71,12 @@
 				'onSnap': callback
 			};
 
-		/*nodes = Array.prototype.slice.call(nodes);
+		nodes = Array.prototype.slice.call(nodes);
 		for (var el of nodes){
 			instances.push(new sGlideRange(el, settings).load(function(o){
-				console.log('>> load!', o, this);
+				console.log('>> load (js)!', o, this);
 			}));
-		}*/
+		}
 			
 		/*setTimeout(function(){
 			instances[0].destroy();
@@ -88,12 +89,12 @@
 
 		// -------------------------------------------------------------------------------------------------------
 
-		var $pct = $('#percent');
+/*		var $pct = $('#percent');
 		$('.slider_bar').on('sGlide.ready', function(e, data){
-			console.log('>> ready', this, data);
+			console.log('>> ready (jQ)!', this, data);
 			// $(this).sGlideRange('destroy');
 		}).sGlideRange(settings, true); //$('#slider1').sGlideRange('startAt', [50, 58]);
-
+*/
 		// setTimeout(function(){
 		// 	$('#slider1').sGlideRange('destroy').sGlideRange(settings);
 		// }, 0);
