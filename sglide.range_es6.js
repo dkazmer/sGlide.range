@@ -7,7 +7,7 @@ created:	11.11.2014
 version:	2.0.0 -es6
 
 	version history:
-		2.0.0	retina setting default set to false ...
+		2.0.0	retina setting default set to false, better code for retina display handling in general; minor refactoring; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks (12.01.2019)
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
@@ -707,7 +707,7 @@ function sGlideRange(self, options){
 					// for true snap only (when not both knobs are on snap points)
 					if (/*isLocked || */(barDrag || barDrag_drop) && !snapType){
 						// n = (target === knob1) ? (m + lockedDiff - target.offsetWidth) : (m - lockedDiff);
-						let n = m - lockedDiff; // target is always knob2
+						var n = m - lockedDiff; // target is always knob2
 						var closest_n = null;
 						// let pctVal_n = 0;
 
@@ -1136,7 +1136,7 @@ function sGlideRange(self, options){
 					var knobWidth	= (knob1.offsetWidth + knob2.offsetWidth) / 2;
 
 					if (vert){
-						base = self.offsetTop + self_width;
+						base = (markers ? vmarks.offsetTop : self.offsetTop) + self_width;
 						x = base - ((!isMobile ? e.pageY : touchY)-2);
 					} else x = (!isMobile ? e.pageX : touchX) - self.offsetLeft;
 
