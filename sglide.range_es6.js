@@ -7,7 +7,7 @@ created:	11.11.2014
 version:	2.0.0 -es6
 
 	version history:
-		2.0.0	retina setting default set to false, better code for retina display handling in general; minor refactoring; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks (12.01.2019)
+		2.0.0	retina setting default set to false, better code for retina display handling in general; minor refactoring; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing (23.01.2019)
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
@@ -174,7 +174,7 @@ function sGlideRange(self, options){
 
 		imgArray.forEach((item, i) => {
 			promises.push(new Promise(resolve => {
-				var img = new Image();
+				const img = new Image();
 				img.onload = () => {
 					cb(img, i);
 					resolve();
@@ -382,21 +382,12 @@ function sGlideRange(self, options){
 			img = (img instanceof Array) ? img : [img, img];
 
 			// retina
-			const processRetinaImage = file => {
-				const rImgTemp = file.split('.');
-				const rImgTemp_length = rImgTemp.length;
-
-				rImgTemp[rImgTemp_length-2] = rImgTemp[rImgTemp_length-2] + '@2x';
-				file = '';
-
-				for (let i = 0; i < rImgTemp_length; i++){
-					file += rImgTemp[i] + ((i < rImgTemp_length-1) ? '.' : '');
-				}
-
-				return file;
-			};
-
 			if (retina){
+				const processRetinaImage = fileName => {
+					const ix = fileName.lastIndexOf('.');
+					return fileName.slice(0, ix) + '@2x' + fileName.slice(ix);
+				};
+
 				for (let i = 0; i < img.length; i++){
 					img[i] = processRetinaImage(img[i]);
 				}
@@ -684,11 +675,11 @@ function sGlideRange(self, options){
 
 		const doSnap = (kind, m) => {
 			if (is_snap){
-				var sense = settings.snap.sensitivity;
+				const sense = settings.snap.sensitivity;
 
 				// although snap is enabled, sensitivity may be set to nill, in which case marks are drawn but won't snap to
 				if (sense || snapType === 'hard' || snapType === 'soft'){
-					var knobWidthHalf		= target.offsetWidth,
+					const knobWidthHalf		= target.offsetWidth,
 						knobWidth			= knobWidthHalf * 2,
 						knobWidthQuarter	= knobWidthHalf / 2,
 						snapOffset			= (sense && sense > 0 && sense < 4 ? (sense + 1) * 5 : 15) - 3;
@@ -946,22 +937,6 @@ function sGlideRange(self, options){
 		var a = false, b = false; // used to mitigate constraint checkers
 		var barDrag_drop = false;
 
-		// get absolute position
-		// https://stackoverflow.com/questions/1480133/how-can-i-get-an-objects-absolute-position-on-the-page-in-javascript
-		const cumulativeOffset = element => {
-			var top = 0, left = 0;
-			do {
-				top += element.offsetTop  || 0;
-				left += element.offsetLeft || 0;
-				element = element.offsetParent;
-			} while(element);
-
-			return {
-				top: top,
-				left: left
-			};
-		};
-
 		eventDocumentMouseMove = e => {
 			if (is_down){
 				e = e || event;	// ie fix
@@ -973,7 +948,7 @@ function sGlideRange(self, options){
 				if (vert){
 					// var base = self.offsetTop + self_width;
 					// var base = self.parentNode.offsetTop + self_width;
-					var base = cumulativeOffset(self).top + self_width;
+					let base = (markers ? vmarks.offsetTop : self.offsetTop) + self_width;
 					if (isMobile){
 						touchY = e.originalEvent.touches[0].pageY;
 						x = base - touchY;

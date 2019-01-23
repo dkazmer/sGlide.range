@@ -7,7 +7,7 @@ created:	1.11.2014
 version:	2.0.0
 
 	version history:
-		2.0.0	retina setting default set to false ... improved vertical positioning and alignments; unit default set to null ()
+		2.0.0	retina setting default set to false ... improved vertical positioning and alignments; unit default set to null; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing (23.01.2019)
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
@@ -160,7 +160,8 @@ version:	2.0.0
 					'snap'			: {
 						'marks'		: false,
 						'type'		: false,
-						'points'	: 0
+						'points'	: 0,
+						'sensitivity': 2
 					},
 					'totalRange'	: [0,0],
 					'disabled'		: false,
@@ -213,6 +214,7 @@ version:	2.0.0
 				valueObj[guid]		= settings.startAt;
 				var result_from		= 0,
 					result_to		= 0,
+					vmarks			= null,
 					knob_bg			= '#333',
 					knob_width_css	= (settings.noHandle ? '0' : '2%'),
 					knob_height_css	= 'inherit';
@@ -238,7 +240,7 @@ version:	2.0.0
 
 					imgArray.forEach((item, i) => {
 						promises.push(new Promise(resolve => {
-							var img = new Image();
+							const img = new Image();
 							img.onload = () => {
 								cb(img, i);
 								resolve();
@@ -251,168 +253,21 @@ version:	2.0.0
 				};
 
 				if (imageBln){	// if image
-					/*let img = settings.image;
-
-					// string or array
-					const multiImageBln = (img instanceof Array);
-
-					const processRetinaImage = file => {
-						let rImgTemp = file.split('.');
-						// var rImgTemp_length = rImgTemp.length;
-
-						rImgTemp[rImgTemp.length-2] = rImgTemp[rImgTemp.length-2] + '@2x';
-						file = '';
-
-						// for (var i = 0; i < rImgTemp.length; i++){
-						// 	file += rImgTemp[i] + ((i < rImgTemp.length-1) ? '.' : '');
-						// }
-						rImgTemp.forEach((i, item) => {
-							file += item + ((i < rImgTemp.length-1) ? '.' : '');
-						});
-
-						return file;
-					};
-
-					if (multiImageBln){
-						// patch: conflict with multiple sliders
-						img = $.extend([], img);
-
-						// retina handling
-						if (retina){
-							img[0] = processRetinaImage(img[0]);
-							img[1] = processRetinaImage(img[1]);
-						}
-
-						knobs.html('<img src="" style="visibility:hidden; position:absolute" />');
-						let newImage = null;
-						let multiImageIndex = 0;
-						const loadNextImage = el => {
-							newImage = el.find('img');
-							newImage.attr('src', img[multiImageIndex]).on('load', () => {
-
-								const thisHeight = newImage[0].naturalHeight;
-
-								if (retina){
-									newImage.width(newImage[0].naturalWidth/2);
-									thisHeight		= newImage.height();
-									knob_width_css	= newImage.width()+'px';
-									knob_height_css	= thisHeight+'px';
-								} else {
-									knob_width_css	= newImage[0].naturalWidth+'px';
-									knob_height_css	= thisHeight+'px';
-								}
-
-								knob_bg = 'url('+img[multiImageIndex]+') no-repeat';
-								const knob_bg_styles = {
-									'width': knob_width_css,
-									'height': knob_height_css,
-									'background': knob_bg
-								};
-								if (retina) knob_bg_styles['background-size'] = '100%';
-
-								el.css(knob_bg_styles);
-
-								newImage.remove();
-
-								if (multiImageIndex < 1){
-									multiImageIndex++;
-									loadNextImage(knob2);
-								} else {
-									follows.css({
-										'height': knob_height_css,
-										'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0'
-									});
-									self.css({
-										'height': knob_height_css,
-										'border-radius': r_corners ? thisHeight / 2 + 'px' : '0'
-									});
-
-									$(el).trigger(eventMakeReady);
-
-									let settings_height = settings.height;
-									if (thisHeight > settings_height){
-										let knobMarginValue = (thisHeight-settings_height)/2;
-										self.css('height', settings_height+'px');
-										knobs.css('top', '-'+knobMarginValue+'px');
-										follows.css({
-											'height': settings_height+'px',
-											'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0'
-										});
-									} else {
-										// children stay inside parent
-										self.css('overflow', 'hidden');
-									}
-								}
-							});
-						};
-						loadNextImage(knob1);
-					} else {
-						knobs.html('<img src="'+img+'" style="visibility:hidden; position:absolute" />');
-
-						// retina handling
-						if (retina) img = processRetinaImage(img);
-
-						knobs.children('img').on('load', () => {
-							const imgEl = $(this);
-							const thisHeight = imgEl[0].naturalHeight;
-							
-							knob_width_css = imgEl[0].naturalWidth+'px';
-							knob_height_css = thisHeight+'px';
-
-							knob_bg = 'url('+img+') no-repeat';
-							const knob_bg_styles = {
-								'width': knob_width_css,
-								'height': knob_height_css,
-								'background': knob_bg
-							};
-							if (retina) knob_bg_styles['background-size'] = '100%';
-
-							knobs.css(knob_bg_styles);
-							follows.css({
-								'height': knob_height_css,
-								'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0'
-							});
-							self.css({
-								'height': knob_height_css,
-								'border-radius': r_corners ? thisHeight / 2 + 'px' : '0'
-							});
-
-							imgEl.remove();
-
-							$(el).trigger(eventMakeReady);
-
-							const settings_height = settings.height;
-							if (thisHeight > settings_height){
-								const knobMarginValue = (thisHeight-settings_height)/2;
-								self.css('height', settings_height+'px');
-								knobs.css('top', '-'+knobMarginValue+'px');
-								follows.css({
-									'height': settings_height+'px',
-									'border-radius': r_corners ? thisHeight / 2 + 'px 0 0 ' + thisHeight / 2 + 'px' : '0'
-								});
-							} else {
-								// children stay inside parent
-								self.css('overflow', 'hidden');
-							}
-						});
-					}*/
-					img = settings.image;
+					let img = settings.image;
 
 					// string or array
 					img = (img instanceof Array) ? img : [img, img];
 
-					const processRetinaImage = file => {
-						const rImgTemp = file.split('.');
-						const rImgTemp_length = rImgTemp.length;
+					if (retina){
+						const processRetinaImage = fileName => {
+							const ix = fileName.lastIndexOf('.');
+							return fileName.slice(0, ix) + '@2x' + fileName.slice(ix);
+						};
 
-						rImgTemp[rImgTemp_length-2] = rImgTemp[rImgTemp_length-2] + '@2x';
-						file = '';
-						for (let i = 0; i < rImgTemp_length; i++){
-							file += rImgTemp[i] + ((i < rImgTemp_length-1) ? '.' : '');
+						for (let i = 0; i < img.length; i++){
+							img[i] = processRetinaImage(img[i]);
 						}
-
-						return file;
-					};
+					}
 
 					const imageLoaded = (image, i) => {
 						let newImage = image;
@@ -422,6 +277,14 @@ version:	2.0.0
 						let thisHeight = newImage.naturalHeight;
 
 						if (retina){
+							knob_width_css	= newImage.naturalWidth/2+'px';
+							knob_height_css	= thisHeight/2+'px';
+						} else {
+							knob_width_css	= newImage.naturalWidth+'px';
+							knob_height_css	= thisHeight+'px';
+						}
+
+						/*if (retina){
 							newImage.style.width	= (newImage.naturalWidth/2)+'px';
 							thisHeight				= newImage.offsetHeight;
 							knob_width_css			= newImage.offsetWidth+'px';
@@ -429,7 +292,7 @@ version:	2.0.0
 						} else {
 							knob_width_css			= newImage.naturalWidth+'px';
 							knob_height_css			= thisHeight+'px';
-						}
+						}*/
 
 						knob_bg = 'url('+path+') no-repeat';
 
@@ -454,7 +317,9 @@ version:	2.0.0
 						{
 							let settings_height = settings.height;
 							if (thisHeight > settings_height){
-								var knobMarginValue = (thisHeight-settings_height)/2;
+								// var knobMarginValue = (thisHeight-settings_height)/2;
+								let knobMarginValue = (thisHeight-settings_height)/2;
+								if (retina) knobMarginValue = (thisHeight/2-settings_height)/2;
 								
 								self.css('height', settings_height+'px');
 
@@ -470,9 +335,7 @@ version:	2.0.0
 						}
 					};
 
-					loadKnobImgs(img, imageLoaded).then(() => {
-						$(el).trigger(eventMakeReady);
-					});
+					loadKnobImgs(img, imageLoaded).then(() => $(el).trigger(eventMakeReady));
 				} else {
 					let d = settings.height / 2;
 					self.css({'border-radius': (r_corners ? d+'px' : '0'), 'overflow': 'hidden'});
@@ -573,7 +436,7 @@ version:	2.0.0
 						target = knob2;
 						snapDragon(knob2[0].offsetLeft);
 					} else if (snapType === 'soft'){
-						var snapKnobs = function(el){
+						const snapKnobs = el => {
 							moved = true;
 							target = el;
 							doSnap('soft', el[0].offsetLeft);
@@ -664,7 +527,7 @@ version:	2.0.0
 						a.wrapAll('<div id="'+guid+'_vert-marks" style="margin:0; z-index:997; width:'+width+unit+
 							'; -webkit-backface-visibility:hidden; -moz-backface-visibility:hidden; -ms-backface-visibility:hidden; backface-visibility:hidden; display:inline-block"></div>');
 
-						const vmarks = $('#'+guid+'_vert-marks');
+						vmarks = $('#'+guid+'_vert-marks');
 
 						self.css('width', '100%');
 						vmarks.css(cssContentBox).css(cssRotate);
@@ -706,7 +569,8 @@ version:	2.0.0
 
 				const doSnap = (kind, m) => {
 					if (is_snap){
-						const sense = (settings.snap.sensitivity !== undefined ? settings.snap.sensitivity : 2);
+						// const sense = (settings.snap.sensitivity !== undefined ? settings.snap.sensitivity : 2);
+						const sense = settings.snap.sensitivity;
 
 						// although snap is enabled, sensitivity may be set to nill, in which case marks are drawn but won't snap to
 						if (sense || snapType === 'hard' || snapType === 'soft'){
@@ -961,7 +825,7 @@ version:	2.0.0
 							knobWidth	= knobs.width();
 
 						if (vert){
-							let base = self.position().top + self_width;
+							let base = (markers ? vmarks.position().top : self.position().top) + self_width;
 							if (isMobile){
 								touchY = e.originalEvent.touches[0].pageY;
 								x = base - touchY;
@@ -1145,7 +1009,8 @@ version:	2.0.0
 							const knobWidth	= knobs.width();
 
 							if (vert){
-								base = self.position().top + self_width;
+								base = (markers ? vmarks.position().top : self.position().top) + self_width;
+								// console.log('>> base', vmarks.position().top);
 								x = base - ((!isMobile ? e.pageY : touchY)-2);
 							} else x = (!isMobile ? e.pageX : touchX) - self.offset().left;
 
@@ -1160,8 +1025,9 @@ version:	2.0.0
 							const m			= x - stopper;	// true position of knob
 
 							// snap to
-							if (barDrag_drop && snapType === 'soft') doSnap('soft', x);
-							else {
+							if (barDrag_drop && snapType === 'soft'){
+								doSnap('soft', m); // send m, not x
+							} else {
 								if (is_snap && snapType === 'soft'){
 									if (target[0] === knob1[0] && m <= knob2[0].offsetLeft)
 										result_from = doSnap('soft', m);
