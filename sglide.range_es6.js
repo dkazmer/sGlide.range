@@ -46,7 +46,6 @@ version:	2.0.0 -es6
 ***********************************************************************************/
 
 function sGlideRange(self, options){
-
 	//------------------------------------------------------------------------------------------------------------------------------------
 	// global variables
 
@@ -186,13 +185,10 @@ function sGlideRange(self, options){
 		return Promise.all(promises);
 	};
 
-	const $ = (name, c) => {
-		if (!c)
-			return document.querySelectorAll(name);
-		return c.querySelectorAll(name);
-	};
+	// may not play nice with jQ
+	const $ = (name, c) => !c ? document.querySelectorAll(name) : c.querySelectorAll(name);
 
-	function wrapAll(elements, wrapperStr){
+	const wrapAll = (elements, wrapperStr) => {
 		// set wrapper element
 		const a = document.createElement('div');
 		a.innerHTML = wrapperStr;
@@ -200,11 +196,10 @@ function sGlideRange(self, options){
 		elements[0].parentNode.insertBefore(wrapperEl, elements[0]);
 
 		// append it
-		// for (let i = 0; i < elements.length; i++) wrapperEl.appendChild(elements[i]);
 		for (let el of elements) wrapperEl.appendChild(el);
-	}
+	};
 
-	function clone(obj){
+	const clone = obj => {
 		if (obj === null || typeof(obj) != 'object') return obj;
 
 		const temp = obj.constructor(); // changed
@@ -216,10 +211,12 @@ function sGlideRange(self, options){
 		}
 
 		return temp;
-	}
+	};
 
 	// from https://gist.github.com/pbojinov/8f3765b672efec122f66
+	// Stay with "function", uses "arguments.callee(...)"
 	function extend(destination, source){
+		console.log('>> extend', destination, source);
 		for (let property in source){
 			if (source[property] && source[property].constructor && source[property].constructor === Object){
 				destination[property] = destination[property] || {};
@@ -231,7 +228,7 @@ function sGlideRange(self, options){
 		return destination;
 	}
 
-	function css(el, styles, prefixes){
+	const css = (el, styles, prefixes) => {
 		let cssString = '';
 
 		if (prefixes){
@@ -256,10 +253,9 @@ function sGlideRange(self, options){
 
 		el.style.cssText += ';' + cssString;
 		return el;
-	}
+	};
 
 	((document, that) => {
-
 		//------------------------------------------------------------------------------------------------------------------------------------
 		// validate params
 
@@ -720,12 +716,12 @@ function sGlideRange(self, options){
 						// if locked & startAts different
 						// if ((isLocked || barDrag) && settings.startAt[0] !== settings.startAt[1]){
 						if (barDrag && settings.startAt[0] !== settings.startAt[1]){
-							// snap other, else snap current knob
 							var currentKnobToClosest = Math.abs(closest - m + knobWidthHalf);
 							var otherKnobToClosest = Math.abs(closest_n - n);
 
 							simulSnap = Math.abs(currentKnobToClosest - otherKnobToClosest) < 1 && is_onSnapPoint;
 
+							// snap other, else snap current knob
 							if (currentKnobToClosest > otherKnobToClosest){
 								boolN = true;
 								closest = closest_n;
@@ -733,7 +729,8 @@ function sGlideRange(self, options){
 							} else {
 								m = (target === knob2) ? m-knobWidthHalf : m;
 							}
-						} else if (!isLocked && target === knob2) m -= knobWidthHalf/2;	// knob2 adjust
+						} else if (!isLocked && target === knob2) m -= knobWidthHalf;	// knob2 adjust
+						console.log('>> lockedRangeAdjusts', knobWidthHalf, knobWidthQuarter);
 					};
 
 					if (kind === 'drag'){
@@ -764,9 +761,11 @@ function sGlideRange(self, options){
 						} else {	// true snap
 							lockedRangeAdjusts();
 							if (Math.round(Math.abs(closest - m + knobWidthHalf/8)) < snapOffset){
+								// on snap point
 								is_onSnapPoint = true;
 								snapUpdate(closest, knobWidth, boolN);
 							} else {
+								// off snap point
 								is_onSnapPoint = false;
 								if (target === knob1 || barDrag && boolN) was_onSnapPoint_left = true;
 								else if (target === knob2) was_onSnapPoint_right = true;

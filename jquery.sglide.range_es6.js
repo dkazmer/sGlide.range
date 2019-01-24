@@ -7,7 +7,7 @@ created:	1.11.2014
 version:	2.0.0
 
 	version history:
-		2.0.0	retina setting default set to false ... improved vertical positioning and alignments; unit default set to null; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing (23.01.2019)
+		2.0.0	retina setting default set to false ... improved vertical positioning and alignments; unit default set to null; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing; added deep-extend to settings to properly support snap sub-object (24.01.2019)
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
@@ -150,7 +150,7 @@ version:	2.0.0
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// settings & variables
 
-				var settings = $.extend({
+				var settings = $.extend(true, {
 					'startAt'		: [0,0],
 					'image'			: 'none',	// full path of image
 					'height'		: 40,
@@ -531,9 +531,7 @@ version:	2.0.0
 
 						self.css('width', '100%');
 						vmarks.css(cssContentBox).css(cssRotate);
-
-						for (let i = 0; i < a.length; i++)
-							a.css('margin', '0');
+						a.css('margin', '0');
 					} else {
 						// check whether even by even or odd by odd to fix blurred elements
 						self.css({
@@ -569,7 +567,6 @@ version:	2.0.0
 
 				const doSnap = (kind, m) => {
 					if (is_snap){
-						// const sense = (settings.snap.sensitivity !== undefined ? settings.snap.sensitivity : 2);
 						const sense = settings.snap.sensitivity;
 
 						// although snap is enabled, sensitivity may be set to nill, in which case marks are drawn but won't snap to
