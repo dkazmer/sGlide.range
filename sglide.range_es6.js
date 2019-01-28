@@ -7,7 +7,7 @@ created:	11.11.2014
 version:	2.0.0 -es6
 
 	version history:
-		2.0.0	retina setting default set to false, better code for retina display handling in general; minor refactoring; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing (23.01.2019)
+		2.0.0	retina setting default set to false, better code for retina display handling in general; minor refactoring; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing; equalized snap point flank distance; added handleSize prop (23.01.2019)
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
@@ -216,7 +216,6 @@ function sGlideRange(self, options){
 	// from https://gist.github.com/pbojinov/8f3765b672efec122f66
 	// Stay with "function", uses "arguments.callee(...)"
 	function extend(destination, source){
-		console.log('>> extend', destination, source);
 		for (let property in source){
 			if (source[property] && source[property].constructor && source[property].constructor === Object){
 				destination[property] = destination[property] || {};
@@ -301,7 +300,8 @@ function sGlideRange(self, options){
 			'vertical'		: false,
 			'retina'		: false,
 			'locked'		: false,
-			'noHandle'		: false
+			'noHandle'		: false,
+			'handleSize'	: null
 		}, options);
 
 		self.removeAttribute('style');	// remove user inline styles
@@ -335,6 +335,14 @@ function sGlideRange(self, options){
 				settings.startAt[1] += 0.00001;
 		}
 
+		const handleSize = () => {
+			if (settings.handleSize === 'big')
+				return '4%';
+			else if (settings.handleSize === 'small')
+				return '1%';
+			return '2%';
+		}
+
 		// local variables
 		var THE_VALUES		= startAt = settings.startAt,
 			self_height		= Math.round(settings.height)+'px',
@@ -343,7 +351,7 @@ function sGlideRange(self, options){
 			result_from		= 0,
 			result_to		= 0,
 			knob_bg			= '#333',
-			knob_width_css	= (settings.noHandle ? '0' : '2%'),
+			knob_width_css	= (settings.noHandle ? '0' : handleSize()),
 			knob_height_css	= 'inherit',
 			isLocked		= settings.locked;
 
@@ -497,7 +505,7 @@ function sGlideRange(self, options){
 
 		var self_width = self.offsetWidth;
 
-		for (var ia = 0; ia < knobs.length; ia++){
+		for (let ia = 0; ia < knobs.length; ia++){
 			css(knobs[ia], {
 				'width': knob_width_css,
 				'background': knob_bg,
@@ -725,12 +733,11 @@ function sGlideRange(self, options){
 							if (currentKnobToClosest > otherKnobToClosest){
 								boolN = true;
 								closest = closest_n;
-								m = (target === knob1) ? n-knobWidthQuarter : n;
+								m = (target === knob1) ? n-knobWidthHalf*0.875 : n;
 							} else {
-								m = (target === knob2) ? m-knobWidthHalf : m;
+								m = (target === knob2) ? m-knobWidthHalf*0.875 : m;
 							}
-						} else if (!isLocked && target === knob2) m -= knobWidthHalf;	// knob2 adjust
-						console.log('>> lockedRangeAdjusts', knobWidthHalf, knobWidthQuarter);
+						} else if (target === knob2) m -= knobWidthHalf*0.875;	// knob2 adjust
 					};
 
 					if (kind === 'drag'){

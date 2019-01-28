@@ -166,9 +166,10 @@ version:	2.0.0
 					'totalRange'	: [0,0],
 					'disabled'		: false,
 					'vertical'		: false,
+					'retina'		: false,
 					'locked'		: false,
 					'noHandle'		: false,
-					'retina'		: false
+					'handleSize'	: null
 				}, options);
 
 				self.removeAttr('style');	// remove user inline styles
@@ -210,13 +211,21 @@ version:	2.0.0
 						settings.startAt[1] += 0.00001;
 				}
 
+				const handleSize = () => {
+					if (settings.handleSize === 'big')
+						return '4%';
+					else if (settings.handleSize === 'small')
+						return '1%';
+					return '2%';
+				}
+
 				// variables
 				valueObj[guid]		= settings.startAt;
 				var result_from		= 0,
 					result_to		= 0,
 					vmarks			= null,
 					knob_bg			= '#333',
-					knob_width_css	= (settings.noHandle ? '0' : '2%'),
+					knob_width_css	= (settings.noHandle ? '0' : handleSize()),
 					knob_height_css	= 'inherit';
 
 				const vert			= settings.vertical,
@@ -616,13 +625,16 @@ version:	2.0.0
 									simulSnapped = Math.abs(currentKnobToClosest - otherKnobToClosest) < 1;
 
 									if (currentKnobToClosest > otherKnobToClosest){
+										console.log('>> other');
 										boolN = true;
 										closest = closest_n;
-										m = (target[0] === knob1[0]) ? n-knobWidthQuarter : n;
+										m = (target[0] === knob1[0]) ? n+knobWidthHalf*0.875 : n; // revise!!
+										// m = n;
 									} else {
-										m = (target[0] === knob2[0]) ? m-knobWidthHalf : m;
+										console.log('>> current');
+										m = (target[0] === knob2[0]) ? m-knobWidthHalf*0.875 : m;
 									}
-								} else if (!isLocked && target[0] === knob2[0]) m -= knobWidthHalf;	// knob2 adjust
+								} else if (target[0] === knob2[0]) m -= knobWidthHalf*0.875;	// knob2 adjust
 							};
 
 							if (kind === 'drag'){

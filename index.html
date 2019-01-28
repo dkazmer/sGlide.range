@@ -22,14 +22,14 @@
 <!-- <script type="text/javascript" src="../nodeListener/nodelistenerES6notify.js"></script> -->
 
 <!-- <script src="http://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script> -->
-<!-- <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>
-<script type="text/javascript" src="jquery.sglide.range_es6.js"></script> -->
-<script type="text/javascript" src="sglide.range_es6.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>
+<script type="text/javascript" src="jquery.sglide.range_es6.js"></script>
+<!-- <script type="text/javascript" src="sglide.range_es6.js"></script> -->
 <!-- <script type="text/javascript" src="../../~web~/sGlide/jquery.sglide.2.min.js"></script> -->
 <!-- <script type="text/javascript" src="../../~web~/sGlide/sglide.2.min.js"></script> -->
 
 <script type="text/javascript">
-	jQ = false;
+	jQ = true;
 	// + fix: barDrag disabled
 	// + fix: mouseup
 	// + bar-drag while hard-snap: snap other knob as well
@@ -57,25 +57,25 @@
 				// 'image': ['img/knob_.png','img/knob_.png'],
 				// 'image': ['img/images/range_knob_01.png', 'img/images/range_knob_02.png'],
 				// 'pill': false,
-				// 'locked': true,//(i === 0) ? true : false,
+				'locked': true,//(i === 0) ? true : false,
 				'totalRange': [58,102],
 				'snap': {
 					'marks': true,
 					// 'type': 'hard',
-					// 'sensitivity': 3,
-					'points': 5
+					// 'sensitivity': 1,
+					'points': 6
 				},
 				'retina': true,
 				// 'vertical': true,
 				// 'disabled': true,
 				// 'noHandle': true,
+				'handleSize': 'big',
 				// 'drag': callback
 				'onSnap': callback
 			};
 
 		if (!jQ){
 			nodes = Array.prototype.slice.call(nodes);
-			console.log('>> nodes', nodes);
 			for (var el of nodes){
 				instances.push(new sGlideRange(el, settings).load(function(o){
 					console.log('>> load (js)!', o, this);
@@ -106,6 +106,12 @@
 		// setTimeout(function(){
 		// 	$('#slider1').sGlideRange('destroy').sGlideRange(settings);
 		// }, 0);
+
+		/*
+			Notes:
+			difference between jQ and JS
+			- when locked, handle-dragged, jQ snaps both handles while JS snaps current handle (causes problem for other knob in jQ)
+		*/
 	};
 </script>
 
