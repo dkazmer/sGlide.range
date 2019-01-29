@@ -4,10 +4,10 @@
 
 author:		Daniel B. Kazmer (webshifted.com)
 created:	11.11.2014
-version:	2.0.0 -es6
+version:	2.0.0
 
 	version history:
-		2.0.0	retina setting default set to false, better code for retina display handling in general; minor refactoring; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing; equalized snap point flank distance; added handleSize prop (23.01.2019)
+		2.0.0	retina setting default set to false, better code for retina display handling in general; minor refactoring; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing; equalized snap point flank distance; added handleSize prop; restored snapping other knob on knob-drag when locked (29.01.2019)
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
@@ -341,7 +341,7 @@ function sGlideRange(self, options){
 			else if (settings.handleSize === 'small')
 				return '1%';
 			return '2%';
-		}
+		};
 
 		// local variables
 		var THE_VALUES		= startAt = settings.startAt,
@@ -700,9 +700,10 @@ function sGlideRange(self, options){
 
 					// if locked, get closest mark for other knob
 					// for true snap only (when not both knobs are on snap points)
-					if (/*isLocked || */(barDrag || barDrag_drop) && !snapType){
-						// n = (target === knob1) ? (m + lockedDiff - target.offsetWidth) : (m - lockedDiff);
-						var n = m - lockedDiff; // target is always knob2
+					// if (/*isLocked || */(barDrag || barDrag_drop) && !snapType){
+					if ((isLocked || barDrag || barDrag_drop) && !snapType){
+						n = (target === knob1) ? (m + lockedDiff - target.offsetWidth) : (m - lockedDiff);
+						// var n = m - lockedDiff; // target is always knob2
 						var closest_n = null;
 						// let pctVal_n = 0;
 
@@ -717,23 +718,23 @@ function sGlideRange(self, options){
 					// ----------------------------------------------------
 					// physically snap it
 
-					var boolN = false;
+					let boolN = false;
 					const lockedRangeAdjusts = () => {
 						// first compare which is closer: m or n
 						// if n, m = n, closest = closest_n
 						// if locked & startAts different
-						// if ((isLocked || barDrag) && settings.startAt[0] !== settings.startAt[1]){
-						if (barDrag && settings.startAt[0] !== settings.startAt[1]){
-							var currentKnobToClosest = Math.abs(closest - m + knobWidthHalf);
-							var otherKnobToClosest = Math.abs(closest_n - n);
+						if ((isLocked || barDrag) && settings.startAt[0] !== settings.startAt[1]){
+						// if (barDrag && settings.startAt[0] !== settings.startAt[1]){
+							let currentKnobToClosest = Math.abs(closest - m + knobWidthHalf);
+							let otherKnobToClosest = Math.abs(closest_n - n);
 
 							simulSnap = Math.abs(currentKnobToClosest - otherKnobToClosest) < 1 && is_onSnapPoint;
-
 							// snap other, else snap current knob
 							if (currentKnobToClosest > otherKnobToClosest){
 								boolN = true;
 								closest = closest_n;
-								m = (target === knob1) ? n-knobWidthHalf*0.875 : n;
+								m = (target === knob1) ? n+(knobWidthHalf-knobWidthHalf*0.875) : n;
+								// m = n; // still a bit off when other is knob2
 							} else {
 								m = (target === knob2) ? m-knobWidthHalf*0.875 : m;
 							}
@@ -824,7 +825,6 @@ function sGlideRange(self, options){
 								return closest;
 							}
 						}
-
 					}
 				}
 			}
@@ -904,11 +904,10 @@ function sGlideRange(self, options){
 				if ((isLocked || barDrag || barDrag_drop) && (closest-lockedDiff+knobWidth/2) <= 0)
 					// closest -= closest-lockedDiff+knobWidth/2;
 					closest -= diff();
-				else
 
 				// constrain right knob to right side - glitch most evident at hard snap
 				// a prior constraint is already set, but you need this extra one - leave it active
-				if (closest < knob1.offsetLeft)// && snapType === 'hard')
+				else if (closest < knob1.offsetLeft)// && snapType === 'hard')
 					closest = knob1.offsetLeft;
 
 				followPos = getFollowPos();
