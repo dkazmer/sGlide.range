@@ -7,7 +7,7 @@ created:	1.11.2014
 version:	2.0.0
 
 	version history:
-		2.0.0	retina setting default set to false ... improved vertical positioning and alignments; unit default set to null; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing; added deep-extend to settings to properly support snap sub-object; return to snapping other knob on knob-drag when locked (29.01.2019)
+		2.0.0	retina setting default set to false ... improved vertical positioning and alignments; unit default set to null; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing; added deep-extend to settings to properly support snap sub-object; restored snapping other knob on knob-drag when locked (29.01.2019)
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
