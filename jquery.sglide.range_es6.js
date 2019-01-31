@@ -577,10 +577,12 @@ version:	2.0.0
 				// get closest px mark
 				const getClosest = (c, x) => {
 					for (let val of snapPxlValues) {
-						if (c === null || Math.abs(val - x) < Math.abs(c - x)) c = val;
+						if (!c || Math.abs(val - x) < Math.abs(c - x)) c = val;
 					}
 					return c;
 				};
+
+				const thisKnobPos = (x, w) => (target[0] === knob2[0]) ? x - w * 0.875 : x + (w - w * 0.875);
 
 				const doSnap = (kind, m) => {
 					if (is_snap){
@@ -592,21 +594,21 @@ version:	2.0.0
 								knobWidth			= knobWidthHalf * 2,
 								snapOffset			= (sense && sense > 0 && sense < 4 ? (sense + 1) * 5 : 15) - 3;
 
-							let closest = getClosest(null, m);
+							let closest = getClosest(false, m);
 
 							// if locked, get closest mark for other knob
 							if (isLocked || barDrag || barDrag_drop){
 								var n = (target[0] === knob1[0]) ? (m + lockedDiff - target.width()) : (m - lockedDiff);
-								var closest_n = getClosest(null, n);
+								var closest_n = getClosest(false, n);
 							}
 
 							// ----------------------------------------------------
 							// physically snap it
 
 							let boolN = false;
-							const thisKnobPos = () => (target[0] === knob2[0]) ? m - knobWidthHalf * 0.875 : m + (knobWidthHalf - knobWidthHalf * 0.875);
+							
 							const lockedRangeAdjusts = () => {
-								// first compare which is closer: m or n
+								// first compare which is closer: m (this) or n (that)
 								// if n, m = n, closest = closest_n
 								// if locked & startAts different
 								if ((isLocked || barDrag) && settings.startAt[0] !== settings.startAt[1]){
@@ -621,8 +623,8 @@ version:	2.0.0
 										boolN = true;
 										closest = closest_n;
 										m = n + (knobWidthHalf - knobWidthHalf * 0.875);
-									} else m = thisKnobPos();
-								} else m = thisKnobPos();
+									} else m = thisKnobPos(m, knobWidthHalf);
+								} else m = thisKnobPos(m, knobWidthHalf);
 							};
 
 							if (kind === 'drag'){
