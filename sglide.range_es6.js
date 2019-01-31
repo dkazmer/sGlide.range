@@ -669,13 +669,21 @@ function sGlideRange(self, options){
 
 		// snapping
 		var storedSnapValues = THE_VALUES;	//[-1, -1];
-		var is_same = false;
-		var storedBarSnapValue = null;
+		// var is_same = false;
+		// var storedBarSnapValue = null;
 		var is_onSnapPoint = false;
 		var was_onSnapPoint_left = true;
 		var was_onSnapPoint_right = true;
 		var simulSnap = false;
 		var moved = false;
+
+		// get closest px mark
+		const getClosest = (c, x) => {
+			for (let val of snapPxlValues){
+				if (c === null || Math.abs(val - x) < Math.abs(c - x)) c = val;
+			}
+			return c;
+		};
 
 		const doSnap = (kind, m) => {
 			if (is_snap){
@@ -685,40 +693,23 @@ function sGlideRange(self, options){
 				if (sense || snapType === 'hard' || snapType === 'soft'){
 					const knobWidthHalf		= target.offsetWidth,
 						knobWidth			= knobWidthHalf * 2,
-						knobWidthQuarter	= knobWidthHalf / 2,
 						snapOffset			= (sense && sense > 0 && sense < 4 ? (sense + 1) * 5 : 15) - 3;
 
-					// get closest px mark, and set %
-					var closest = null;//, pctVal = 0;
-					for (let val of snapPxlValues){
-						// fine for knob-drab but not for barDrag:
-						if (closest === null || Math.abs(val - m) < Math.abs(closest - m)){
-							closest = val;// | 0.0;
-							// pctVal = snapPctValues[i];
-						}
-					}
+					var closest = getClosest(null, m);
 
 					// if locked, get closest mark for other knob
 					// for true snap only (when not both knobs are on snap points)
 					// if (/*isLocked || */(barDrag || barDrag_drop) && !snapType){
 					if ((isLocked || barDrag || barDrag_drop) && !snapType){
-						n = (target === knob1) ? (m + lockedDiff - target.offsetWidth) : (m - lockedDiff);
-						// var n = m - lockedDiff; // target is always knob2
-						var closest_n = null;
-						// let pctVal_n = 0;
-
-						for (let val of snapPxlValues){
-							if (closest_n === null || Math.abs(val - n) < Math.abs(closest_n - n)){
-								closest_n = val;// | 0;
-								// pctVal_n = snapPctValues[i];
-							}
-						}
+						var n = (target === knob1) ? (m + lockedDiff - target.offsetWidth) : (m - lockedDiff);
+						var closest_n = getClosest(null, n);
 					}
 
 					// ----------------------------------------------------
 					// physically snap it
 
 					let boolN = false;
+					const thisKnobPos = () => (target === knob2) ? m - knobWidthHalf * 0.875 : m + (knobWidthHalf - knobWidthHalf * 0.875);
 					const lockedRangeAdjusts = () => {
 						// first compare which is closer: m or n
 						// if n, m = n, closest = closest_n
@@ -731,14 +722,12 @@ function sGlideRange(self, options){
 							simulSnap = Math.abs(currentKnobToClosest - otherKnobToClosest) < 1 && is_onSnapPoint;
 							// snap other, else snap current knob
 							if (currentKnobToClosest > otherKnobToClosest){
+								// that knob
 								boolN = true;
 								closest = closest_n;
-								m = (target === knob1) ? n+(knobWidthHalf-knobWidthHalf*0.875) : n;
-								// m = n; // still a bit off when other is knob2
-							} else {
-								m = (target === knob2) ? m-knobWidthHalf*0.875 : m;
-							}
-						} else if (target === knob2) m -= knobWidthHalf*0.875;	// knob2 adjust
+								m = n + (knobWidthHalf - knobWidthHalf * 0.875);
+							} else m = thisKnobPos();
+						} else m = thisKnobPos();
 					};
 
 					if (kind === 'drag'){
@@ -872,6 +861,7 @@ function sGlideRange(self, options){
 			// -----------------------------
 
 			if ((target === knob1 && !isN) || (target === knob2 && isN)){
+				// right knob
 				const diff = () => closest+lockedDiff-knobWidth/2;
 
 				// patch: constraint right: if new knob2 pos > end knob2 pos, set new closest value;
@@ -898,6 +888,7 @@ function sGlideRange(self, options){
 					was_onSnapPoint_right = is_onSnapPoint;	// must on hard-snap; but causes double snap when both knob snapped
 				}
 			} else {
+				// left knob
 				const diff = () => closest-lockedDiff+knobWidth/2;
 
 				// patch: constraint left: if new knob1 pos < 0, set new closest value;

@@ -226,7 +226,8 @@ version:	2.0.0
 					vmarks			= null,
 					knob_bg			= '#333',
 					knob_width_css	= (settings.noHandle ? '0' : handleSize()),
-					knob_height_css	= 'inherit';
+					knob_height_css	= 'inherit',
+					isLocked		= settings.locked;
 
 				const vert			= settings.vertical,
 					is_snap			= (settings.snap.points > 0 && settings.snap.points <= 11),
@@ -235,8 +236,7 @@ version:	2.0.0
 					r_corners		= settings.pill,
 					imageBln		= (settings.image != 'none' && settings.image !== '' && !settings.noHandle),
 					retina			= (window.devicePixelRatio > 1) && settings.retina,
-					customRange		= (settings.totalRange[0] !== 0 || settings.totalRange[1] !== 0) && settings.totalRange[0] < settings.totalRange[1],
-					isLocked		= settings.locked;
+					customRange		= (settings.totalRange[0] !== 0 || settings.totalRange[1] !== 0) && settings.totalRange[0] < settings.totalRange[1];
 
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// image handling
@@ -565,14 +565,22 @@ version:	2.0.0
 				// var storedSnapValues = {'from': null, 'to': null};
 				var storedSnapValues = valueObj[guid];	//[-1, -1];
 				// var storedSnapValues = valueObj[guid];
-				var is_same = false;
-				var storedBarSnapValue = null;
+				// var is_same = false;
+				// var storedBarSnapValue = null;
 				var is_onSnapPoint = false;
 				// var was_onSnapPoint = false;
 				var was_onSnapPoint_left = true;
 				var was_onSnapPoint_right = true;
-				var simulSnapped = false;
-				var moved = false;
+				// var simulSnapped = false;
+				// var moved = false;
+
+				// get closest px mark
+				const getClosest = (c, x) => {
+					for (let val of snapPxlValues) {
+						if (c === null || Math.abs(val - x) < Math.abs(c - x)) c = val;
+					}
+					return c;
+				};
 
 				const doSnap = (kind, m) => {
 					if (is_snap){
@@ -582,39 +590,21 @@ version:	2.0.0
 						if (sense || snapType === 'hard' || snapType === 'soft'){
 							const knobWidthHalf		= target.width(),
 								knobWidth			= knobWidthHalf * 2,
-								knobWidthQuarter	= knobWidthHalf / 2,
 								snapOffset			= (sense && sense > 0 && sense < 4 ? (sense + 1) * 5 : 15) - 3;
 
-							// get closest px mark, and set %
-							let closest = null, pctVal = 0;
-							$.each(snapPxlValues, (i, num) => {
-								if (closest === null || Math.abs(num - m) < Math.abs(closest - m)){
-									closest = num;// | 0.0;
-									pctVal = snapPctValues[i];
-								}
-							});
+							let closest = getClosest(null, m);
 
 							// if locked, get closest mark for other knob
 							if (isLocked || barDrag || barDrag_drop){
-								var closest_n = null, n = 0;
-								// var pctVal_n = 0;
-
-								// if (target[0] === knob1[0]) n = m + lockedDiff - target.width();//*0.75;
-								// else n = m - lockedDiff;// - target.width() * 0.5;
-								n = (target[0] === knob1[0]) ? (m + lockedDiff - target.width()) : (m - lockedDiff);
-
-								$.each(snapPxlValues, (i, num) => {
-									if (closest_n === null || Math.abs(num - n) < Math.abs(closest_n - n)){
-										closest_n = num;// | 0;
-										// pctVal_n = snapPctValues[i];
-									}
-								});
+								var n = (target[0] === knob1[0]) ? (m + lockedDiff - target.width()) : (m - lockedDiff);
+								var closest_n = getClosest(null, n);
 							}
 
 							// ----------------------------------------------------
 							// physically snap it
 
 							let boolN = false;
+							const thisKnobPos = () => (target[0] === knob2[0]) ? m - knobWidthHalf * 0.875 : m + (knobWidthHalf - knobWidthHalf * 0.875);
 							const lockedRangeAdjusts = () => {
 								// first compare which is closer: m or n
 								// if n, m = n, closest = closest_n
@@ -627,14 +617,12 @@ version:	2.0.0
 									simulSnapped = Math.abs(currentKnobToClosest - otherKnobToClosest) < 1;
 
 									if (currentKnobToClosest > otherKnobToClosest){
+										// that knob
 										boolN = true;
 										closest = closest_n;
-										m = (target[0] === knob1[0]) ? n+(knobWidthHalf-knobWidthHalf*0.875) : n; // revise!!
-										// m = n;
-									} else {
-										m = (target[0] === knob2[0]) ? m-knobWidthHalf*0.875 : m;
-									}
-								} else if (target[0] === knob2[0]) m -= knobWidthHalf*0.875;	// knob2 adjust
+										m = n + (knobWidthHalf - knobWidthHalf * 0.875);
+									} else m = thisKnobPos();
+								} else m = thisKnobPos();
 							};
 
 							if (kind === 'drag'){
