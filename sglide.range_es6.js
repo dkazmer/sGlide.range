@@ -905,14 +905,16 @@ function sGlideRange(self, options){
 
 				followPos = getFollowPos();
 
-				css(knob2, {'left': closest}).data('px', closest);
-				css(follow2, {'width': followPos});
+				if (snapType !== 'hard'){
+					css(knob2, {'left': closest}).data('px', closest);
+					css(follow2, {'width': followPos});
+				}
 
 				if (isLocked || barDrag || barDrag_drop){
 					css(knob1, {'left': diff()}).data('px', diff());
 					css(follow1, {'width': (followPos-lockedDiff)});
 				}
-
+				console.log('>> rez B:', closest, snapType);
 				// output
 				if (was_onSnapPoint_right && !simulSnap){
 					snapOutput(1, closest);
@@ -1007,15 +1009,23 @@ function sGlideRange(self, options){
 						var knob1_style_left	= knob1.data('px');
 						var knob1_offset_left	= knob1.offsetLeft;
 
-						if (x <= knob1_offset_left+stopper+knobWidth && (!is_snap || snapType !== 'hard')){
+						// if (x <= knob1_offset_left+stopper+knobWidth && (!is_snap || snapType !== 'hard')){
+						// if (x <= knob1_offset_left+stopper+knobWidth || (is_snap && snapType === 'hard')){
+						if (x <= knob1_offset_left+stopper+knobWidth){
+							console.log('>> D');
 							if (b) b = false;
+							// if (is_snap && snapType === 'hard') return b;
 							if (!a){
+								console.log('>> rez A:', knob1_style_left);
 								css(knob2, {'left': knob1_style_left}).data('px', knob1_style_left);
 								css(follow2, {'width': (knob1_offset_left+stopper+knobWidth)});
 								if (snapType === 'hard') snapOutput(getPercent([result_from, result_to]).percentRange[0], 'to');
 								a = true;
 							}
-						} else if (x >= self_width-stopper && (!is_snap || snapType !== 'hard')){
+						// } else if (x >= self_width-stopper && (!is_snap || snapType !== 'hard')){
+						// } else if (x >= self_width-stopper || (is_snap && snapType === 'hard')){
+						} else if (x >= self_width-stopper){
+							console.log('>> E');
 							if (a) a = false;
 							if (!b){
 								css(knob2, {'left': (self_width-knobWidth*2)}).data('px', (self_width-knobWidth*2));
