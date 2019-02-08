@@ -35,6 +35,7 @@
 	// + bar-drag while hard-snap: snap other knob as well
 	// + bar-drag while hard-snap: run snapOutput only on snap, on every snap
 	// + hard-snap knobs: better contraints when closing knobs
+	// - constraint / snap point mismatch
 	// vertical, soft snap: dividual handle snapping registration wrong!!
 	// for release: "separated 'disabled' from knob visibility, added noKnob setting"
 	function run(){
@@ -50,7 +51,7 @@
 			settings	= {
 				'startAt': [15,85],
 				// 'startAt': [25,75],
-				'width': 400,
+				'width': 620,
 				'height': 22,
 				'unit': 'px',
 				// 'image': 'img/knob_.png',
@@ -61,9 +62,9 @@
 				'totalRange': [58,102],
 				'snap': {
 					'marks': true,
-					'type': 'hard',
+					// 'type': 'hard',
 					// 'sensitivity': 1,
-					'points': 6
+					'points': 8
 				},
 				'retina': true,
 				// 'vertical': true,

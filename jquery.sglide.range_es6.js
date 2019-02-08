@@ -574,7 +574,7 @@ version:	2.0.0
 				// var simulSnapped = false;
 				// var moved = false;
 
-				// get closest px mark
+				// get closest snap mark (px)
 				const getClosest = (c, x) => {
 					for (let val of snapPxlValues) {
 						if (!c || Math.abs(val - x) < Math.abs(c - x)) c = val;

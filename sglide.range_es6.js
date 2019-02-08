@@ -568,7 +568,7 @@ function sGlideRange(self, options){
 			const increment = sw / (snaps - 1);
 			var step = increment;
 
-			while (step <= sw){
+			while (step <= sw+kw){
 				snapPxlValues.push(step);
 				step += increment;
 			}
@@ -677,10 +677,11 @@ function sGlideRange(self, options){
 		var simulSnap = false;
 		var moved = false;
 
-		// get closest px mark
-		const getClosest = (c, x) => {
+		// get closest snap mark (px)
+		const getClosest = x => {
+			var c = 0;
 			for (let val of snapPxlValues){
-				if (!c || Math.abs(val - x) < Math.abs(c - x)) c = val;
+				if (Math.abs(val - x) < Math.abs(c - x)) c = val;
 			}
 			return c;
 		};
@@ -697,14 +698,14 @@ function sGlideRange(self, options){
 						knobWidth			= knobWidthHalf * 2,
 						snapOffset			= (sense && sense > 0 && sense < 4 ? (sense + 1) * 5 : 15) - 3;
 
-					var closest = getClosest(false, m);
+					var closest = getClosest(m);
 
 					// if locked, get closest mark for other knob
 					// for true snap only (when not both knobs are on snap points)
 					// if (/*isLocked || */(barDrag || barDrag_drop) && !snapType){
 					if ((isLocked || barDrag || barDrag_drop) && !snapType){
 						var n = (target === knob1) ? (m + lockedDiff - target.offsetWidth) : (m - lockedDiff);
-						var closest_n = getClosest(false, n);
+						var closest_n = getClosest(n);
 					}
 
 					// ----------------------------------------------------
@@ -718,12 +719,12 @@ function sGlideRange(self, options){
 						// if locked & startAts different
 						if ((isLocked || barDrag) && settings.startAt[0] !== settings.startAt[1]){
 						// if (barDrag && settings.startAt[0] !== settings.startAt[1]){
-							let currentKnobToClosest = Math.abs(closest - m + knobWidthHalf);
-							let otherKnobToClosest = Math.abs(closest_n - n);
+							let thisKnobToClosest = Math.abs(closest - m + knobWidthHalf);
+							let thatKnobToClosest = Math.abs(closest_n - n);
 
-							simulSnap = Math.abs(currentKnobToClosest - otherKnobToClosest) < 1 && is_onSnapPoint;
+							simulSnap = Math.abs(thisKnobToClosest - thatKnobToClosest) < 1 && is_onSnapPoint;
 							// snap other, else snap current knob
-							if (currentKnobToClosest > otherKnobToClosest){
+							if (thisKnobToClosest > thatKnobToClosest){
 								// that knob
 								boolN = true;
 								closest = closest_n;
@@ -857,13 +858,13 @@ function sGlideRange(self, options){
 
 		}, snapUpdate = (closest, knobWidth, isN, m) => {
 			const getFollowPos = () => (closest+knobWidth/4+knobWidth/2);
-
+console.log('>> snapUpdate', closest);
 			var followPos = getFollowPos();
 
 			// -----------------------------
 
 			if ((target === knob1 && !isN) || (target === knob2 && isN)){
-				// right knob
+				console.log('>> left snap');
 				const diff = () => closest+lockedDiff-knobWidth/2;
 
 				// patch: constraint right: if new knob2 pos > end knob2 pos, set new closest value;
@@ -890,7 +891,6 @@ function sGlideRange(self, options){
 					was_onSnapPoint_right = is_onSnapPoint;	// must on hard-snap; but causes double snap when both knob snapped
 				}
 			} else {
-				// left knob
 				const diff = () => closest-lockedDiff+knobWidth/2;
 
 				// patch: constraint left: if new knob1 pos < 0, set new closest value;
@@ -902,19 +902,17 @@ function sGlideRange(self, options){
 				// a prior constraint is already set, but you need this extra one - leave it active
 				else if (closest < knob1.offsetLeft)// && snapType === 'hard')
 					closest = knob1.offsetLeft;
-
+console.log('>> right snap',closest, snapPxlValues);
 				followPos = getFollowPos();
 
-				if (snapType !== 'hard'){
-					css(knob2, {'left': closest}).data('px', closest);
-					css(follow2, {'width': followPos});
-				}
+				css(knob2, {'left': closest}).data('px', closest);
+				css(follow2, {'width': followPos});
 
 				if (isLocked || barDrag || barDrag_drop){
 					css(knob1, {'left': diff()}).data('px', diff());
 					css(follow1, {'width': (followPos-lockedDiff)});
 				}
-				console.log('>> rez B:', closest, snapType);
+
 				// output
 				if (was_onSnapPoint_right && !simulSnap){
 					snapOutput(1, closest);
@@ -966,15 +964,15 @@ function sGlideRange(self, options){
 					if (!gotLockedPositions) getLockedPositions();
 				}
 
-				var stopper = knobWidth / 2;
-				var m = x - stopper;
+				const stopper = knobWidth / 2;
+				const m = x - stopper;
 
 				if (e.returnValue) e.returnValue = false;
 
 				if (!isLocked && !barDrag){
 					if (target === knob1){
-						var knob2_style_left	= knob2.data('px');
-						var knob2_offset_left	= knob2.offsetLeft;
+						const knob2_style_left	= knob2.data('px');
+						const knob2_offset_left	= knob2.offsetLeft;
 
 						// if (x <= stopper && (!is_snap || snapType !== 'hard')){
 						// if (x <= stopper || (is_snap && snapType === 'hard')){
@@ -1006,17 +1004,17 @@ function sGlideRange(self, options){
 							snapDragon(m);
 						}
 					} else if (target === knob2){
-						var knob1_style_left	= knob1.data('px');
-						var knob1_offset_left	= knob1.offsetLeft;
+						const knob1_style_left	= knob1.data('px');
+						const knob1_offset_left	= knob1.offsetLeft;
 
 						// if (x <= knob1_offset_left+stopper+knobWidth && (!is_snap || snapType !== 'hard')){
 						// if (x <= knob1_offset_left+stopper+knobWidth || (is_snap && snapType === 'hard')){
 						if (x <= knob1_offset_left+stopper+knobWidth){
-							console.log('>> D');
+							console.log('>> k2 constrain left',knob1_style_left);
 							if (b) b = false;
 							// if (is_snap && snapType === 'hard') return b;
+							return b;
 							if (!a){
-								console.log('>> rez A:', knob1_style_left);
 								css(knob2, {'left': knob1_style_left}).data('px', knob1_style_left);
 								css(follow2, {'width': (knob1_offset_left+stopper+knobWidth)});
 								if (snapType === 'hard') snapOutput(getPercent([result_from, result_to]).percentRange[0], 'to');
@@ -1025,7 +1023,6 @@ function sGlideRange(self, options){
 						// } else if (x >= self_width-stopper && (!is_snap || snapType !== 'hard')){
 						// } else if (x >= self_width-stopper || (is_snap && snapType === 'hard')){
 						} else if (x >= self_width-stopper){
-							console.log('>> E');
 							if (a) a = false;
 							if (!b){
 								css(knob2, {'left': (self_width-knobWidth*2)}).data('px', (self_width-knobWidth*2));
