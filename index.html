@@ -22,20 +22,20 @@
 <!-- <script type="text/javascript" src="../nodeListener/nodelistenerES6notify.js"></script> -->
 
 <!-- <script src="http://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script> -->
-<!-- <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>
-<script type="text/javascript" src="jquery.sglide.range_es6.js"></script> -->
-<script type="text/javascript" src="sglide.range_es6.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>
+<script type="text/javascript" src="jquery.sglide.range_es6.js"></script>
+<!-- <script type="text/javascript" src="sglide.range_es6.js"></script> -->
 <!-- <script type="text/javascript" src="../../~web~/sGlide/jquery.sglide.2.min.js"></script> -->
 <!-- <script type="text/javascript" src="../../~web~/sGlide/sglide.2.min.js"></script> -->
 
 <script type="text/javascript">
-	jQ = false;
+	jQ = 1;
 	// + fix: barDrag disabled
 	// + fix: mouseup
 	// + bar-drag while hard-snap: snap other knob as well
 	// + bar-drag while hard-snap: run snapOutput only on snap, on every snap
 	// + hard-snap knobs: better contraints when closing knobs
-	// - constraint / snap point mismatch
+	// + constraint / snap point mismatch - removed superfluous constrainer in snapUpdate
 	// vertical, soft snap: dividual handle snapping registration wrong!!
 	// for release: "separated 'disabled' from knob visibility, added noKnob setting"
 	function run(){
@@ -54,7 +54,7 @@
 				'width': 620,
 				'height': 22,
 				'unit': 'px',
-				// 'image': 'img/knob_.png',
+				'image': 'img/knob_.png',
 				// 'image': ['img/knob_.png','img/knob_.png'],
 				// 'image': ['img/images/range_knob_01.png', 'img/images/range_knob_02.png'],
 				// 'pill': false,
@@ -62,7 +62,7 @@
 				'totalRange': [58,102],
 				'snap': {
 					'marks': true,
-					// 'type': 'hard',
+					'type': 'hard',
 					// 'sensitivity': 1,
 					'points': 8
 				},
@@ -71,8 +71,8 @@
 				// 'disabled': true,
 				// 'noHandle': true,
 				'handleSize': 'big',
-				'drag': callback
-				// 'onSnap': callback
+				// 'drag': callback
+				'onSnap': callback
 			};
 
 		if (!jQ){

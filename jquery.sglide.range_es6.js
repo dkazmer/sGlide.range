@@ -575,9 +575,11 @@ version:	2.0.0
 				// var moved = false;
 
 				// get closest snap mark (px)
-				const getClosest = (c, x) => {
+				const getClosest = x => {
+					var c = 0;
+					var kw = (snapType === 'hard') ? knob1.width()/2 : 0;
 					for (let val of snapPxlValues) {
-						if (!c || Math.abs(val - x) < Math.abs(c - x)) c = val;
+						if (Math.abs(val - x + kw) < Math.abs(c - x + kw)) c = val;
 					}
 					return c;
 				};
@@ -594,12 +596,12 @@ version:	2.0.0
 								knobWidth			= knobWidthHalf * 2,
 								snapOffset			= (sense && sense > 0 && sense < 4 ? (sense + 1) * 5 : 15) - 3;
 
-							let closest = getClosest(false, m);
+							let closest = getClosest(m);
 
 							// if locked, get closest mark for other knob
 							if (isLocked || barDrag || barDrag_drop){
 								var n = (target[0] === knob1[0]) ? (m + lockedDiff - target.width()) : (m - lockedDiff);
-								var closest_n = getClosest(false, n);
+								var closest_n = getClosest(n);
 							}
 
 							// ----------------------------------------------------
@@ -755,8 +757,9 @@ version:	2.0.0
 
 						// constrain left knob to left side - glitch most evident at hard snap
 						// a prior constraint is already set, but you need this extra one - leave it active
-						else if (closest > knob2[0].offsetLeft - (knobWidth/2))// && snapType === 'hard')
-							closest = knob2[0].offsetLeft - (knobWidth/2);
+						// else if (closest > knob2[0].offsetLeft - (knobWidth/2))// && snapType === 'hard')
+						// 	closest = knob2[0].data('px') - (knobWidth/2);
+						// 	closest = knob2[0].offsetLeft - (knobWidth/2);
 
 						knob1.css('left', closest).data('px', closest);
 						follow1.css('width', (closest+knobWidth/4));
@@ -782,8 +785,9 @@ version:	2.0.0
 
 						// constrain right knob to right side - glitch most evident at hard snap
 						// a prior constraint is already set, but you need this extra one - leave it active
-						else if (closest < knob1[0].offsetLeft)// && snapType === 'hard')
-							closest = knob1[0].offsetLeft;
+						// else if (closest < knob1[0].offsetLeft)// && snapType === 'hard')
+						// 	closest = knob1[0].data('px');
+						// 	closest = knob1[0].offsetLeft;
 
 						followPos = getFollowPos();
 
@@ -856,18 +860,21 @@ version:	2.0.0
 								let knob2_style_left	= knob2.data('px');
 								let knob2_offset_left	= knob2El.offsetLeft;
 
-								if (x <= stopper && (!is_snap || snapType !== 'hard')){
+								// if (x <= stopper && (!is_snap || snapType !== 'hard')){
+								// if (x <= stopper || (is_snap && snapType === 'hard')){
+								if (x <= stopper){
 									if (b) b = false;
 									if (!a){
-										// targetEl.style.left = '0';
 										knob1.css('left', 0).data('px', 0);
 										follow1.css('width', stopper);
 										a = true;
 									}
-								} else if (x >= knob2_offset_left-stopper && (!is_snap || snapType !== 'hard')){
+								// } else if (x >= knob2_offset_left-stopper && (!is_snap || snapType !== 'hard')){
+								// } else if (x >= knob2_offset_left-stopper || (is_snap && snapType === 'hard')){
+								} else if (x >= knob2_offset_left-stopper){
 									if (a) a = false;
+									if (is_snap && snapType === 'hard') return a;
 									if (!b){
-										// targetEl.style.left = knob2_style_left;
 										knob1.css('left', knob2_style_left).data('px', knob2_style_left);
 										follow1.css('width', (knob2_offset_left-stopper));
 										if (snapType === 'hard') snapOutput(getPercent([result_from, result_to]).percentRange[1], 'from');
@@ -875,8 +882,7 @@ version:	2.0.0
 									}
 								} else {
 									a = b = false;
-									// targetEl.style.left = (x-stopper)+'px';
-									knob1.css('left', (x-stopper)).data('px', (x-stopper));
+									knob1.css('left', m).data('px', m);
 									follow1.css('width', x);
 									snapDragon(m);
 								}
@@ -884,33 +890,38 @@ version:	2.0.0
 								let knob1_style_left	= knob1.data('px');
 								let knob1_offset_left	= knob1El.offsetLeft;
 
-								if (x <= knob1_offset_left+stopper+knobWidth && (!is_snap || snapType !== 'hard')){
+								// if (x <= knob1_offset_left+stopper+knobWidth && (!is_snap || snapType !== 'hard')){
+								// if (x <= knob1_offset_left+stopper+knobWidth || (is_snap && snapType === 'hard')){
+								if (x <= knob1_offset_left+stopper+knobWidth){
 									if (b) b = false;
+									if (is_snap && snapType === 'hard') return b;
 									if (!a){
-										// targetEl.style.left = knob1_style_left;
 										knob2.css('left', knob1_style_left).data('px', knob1_style_left);
 										follow2.css('width', (knob1_offset_left+stopper+knobWidth));
 										if (snapType === 'hard') snapOutput(getPercent([result_from, result_to]).percentRange[0], 'to');
 										a = true;
 									}
-								} else if (x >= self_width-stopper && (!is_snap || snapType !== 'hard')){
+								// } else if (x >= self_width-stopper && (!is_snap || snapType !== 'hard')){
+								// } else if (x >= self_width-stopper || (is_snap && snapType === 'hard')){
+								} else if (x >= self_width-stopper){
 									if (a) a = false;
 									if (!b){
-										// targetEl.style.left = (self_width-knobWidth*2)+'px';
 										knob2.css('left', (self_width-knobWidth*2)).data('px', (self_width-knobWidth*2));
 										follow2.css('width', (self_width-stopper));
 										b = true;
 									}
 								} else {
 									a = b = false;
-									knob2.css('left', (x-stopper-knobWidth)).data('px', (x-stopper-knobWidth));
+									knob2.css('left', (m-knobWidth)).data('px', (m-knobWidth));
 									follow2.css('width', x);
 									snapDragon(m);
 								}
 							}
 						} else {
 							if (targetEl === knob1El){
-								if (x <= stopper && (!is_snap || snapType !== 'hard')){
+								// if (x <= stopper && (!is_snap || snapType !== 'hard')){
+								// if (x <= stopper || (is_snap && snapType === 'hard')){
+								if (x <= stopper){
 									if (b) b = false;
 									if (!a){
 										knob1.css('left', 0).data('px', 0);
@@ -920,7 +931,9 @@ version:	2.0.0
 										follow2.css('width', (lockedDiff+stopper));
 										a = true;
 									}
-								} else if (x >= self_width-lockedDiff-stopper && (!is_snap || snapType !== 'hard')){
+								// } else if (x >= self_width-lockedDiff-stopper && (!is_snap || snapType !== 'hard')){
+								// } else if (x >= self_width-lockedDiff-stopper || (is_snap && snapType === 'hard')){
+								} else if (x >= self_width-lockedDiff-stopper){
 									if (a) a = false;
 									if (!b){
 										knob2.css('left', (self_width-knobWidth*2)).data('px', (self_width-knobWidth*2));
@@ -932,15 +945,17 @@ version:	2.0.0
 									}
 								} else {
 									a = b = false;
-									knob1.css('left', (x-stopper)).data('px', (x-stopper));
+									knob1.css('left', m).data('px', m);
 									follow1.css('width', x);
 
-									knob2.css('left', (x-stopper-knobWidth+lockedDiff)).data('px', (x-stopper-knobWidth+lockedDiff));
+									knob2.css('left', (m-knobWidth+lockedDiff)).data('px', (m-knobWidth+lockedDiff));
 									follow2.css('width', (x+lockedDiff));
 									snapDragon(m);
 								}
 							} else if (targetEl === knob2El){
-								if (x <= lockedDiff+stopper && (!is_snap || snapType !== 'hard')){
+								// if (x <= lockedDiff+stopper && (!is_snap || snapType !== 'hard')){
+								// if (x <= lockedDiff+stopper || (is_snap && snapType === 'hard')){
+								if (x <= lockedDiff+stopper){
 									if (b) b = false;
 									if (!a){
 										knob2.css('left', (lockedDiff-knobWidth)).data('px', (lockedDiff-knobWidth));
@@ -950,7 +965,9 @@ version:	2.0.0
 										follow1.css('width', stopper);
 										a = true;
 									}
-								} else if (x >= self_width-stopper && (!is_snap || snapType !== 'hard')){
+								// } else if (x >= self_width-stopper && (!is_snap || snapType !== 'hard')){
+								// } else if (x >= self_width-stopper || (is_snap && snapType === 'hard')){
+								} else if (x >= self_width-stopper){
 									if (a) a = false;
 									if (!b){
 										knob2.css('left', (self_width-knobWidth*2)).data('px', (self_width-knobWidth*2));
@@ -962,10 +979,10 @@ version:	2.0.0
 									}
 								} else {
 									a = b = false;
-									knob2.css('left', (x-stopper-knobWidth)).data('px', (x-stopper-knobWidth));
+									knob2.css('left', (m-knobWidth)).data('px', (m-knobWidth));
 									follow2.css('width', x);
 
-									knob1.css('left', (x-stopper-lockedDiff)).data('px', (x-stopper-lockedDiff));
+									knob1.css('left', (m-lockedDiff)).data('px', (m-lockedDiff));
 									follow1.css('width', (x-lockedDiff));
 									snapDragon(m);
 								}

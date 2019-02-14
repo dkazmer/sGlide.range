@@ -680,8 +680,9 @@ function sGlideRange(self, options){
 		// get closest snap mark (px)
 		const getClosest = x => {
 			var c = 0;
+			var kw = (snapType === 'hard') ? knob1.offsetWidth/2 : 0;
 			for (let val of snapPxlValues){
-				if (Math.abs(val - x) < Math.abs(c - x)) c = val;
+				if (Math.abs(val - x + kw) < Math.abs(c - x + kw)) c = val;
 			}
 			return c;
 		};
@@ -870,10 +871,11 @@ function sGlideRange(self, options){
 				if ((isLocked || barDrag || barDrag_drop) && diff() > (self_width - knobWidth))
 					closest -= diff() - (self_width - knobWidth);
 
-				// constrain left knob to left side - glitch most evident at hard snap
-				// a prior constraint is already set, but you need this extra one - leave it active
-				else if (closest > knob2.offsetLeft - (knobWidth/2))// && snapType === 'hard')
-					closest = knob2.dataObj.px - (knobWidth/2);
+				// Constrain left knob to left side - glitch most evident at hard snap
+				// A prior constraint is already set, but you need this extra one - leave it active
+				// Probably don't need this anymore...
+				// else if (closest > knob2.offsetLeft - (knobWidth/2))// && snapType === 'hard')
+				// 	closest = knob2.dataObj.px - (knobWidth/2);
 					// closest = knob2.offsetLeft - (knobWidth/2);
 
 				css(knob1, {'left': closest}).data('px', closest);
@@ -895,14 +897,15 @@ function sGlideRange(self, options){
 
 				// patch: constraint left: if new knob1 pos < 0, set new closest value;
 				if ((isLocked || barDrag || barDrag_drop) && (closest-lockedDiff+knobWidth/2) <= 0)
-					// closest -= closest-lockedDiff+knobWidth/2;
 					closest -= diff();
+					// closest -= closest-lockedDiff+knobWidth/2;
 
-				// constrain right knob to right side - glitch most evident at hard snap
-				// a prior constraint is already set, but you need this extra one - leave it active
-				else if (closest < knob1.offsetLeft)// && snapType === 'hard')
+				// Constrain right knob to right side - glitch most evident at hard snap
+				// A prior constraint is already set, but you need this extra one - leave it active
+				// Probably don't need this anymore...
+				// else if (closest < knob1.offsetLeft)// && snapType === 'hard')
+				// 	closest = knob1.dataObj.px;
 					// closest = knob1.offsetLeft;	// can't use this value because DOM doesn't have decimal pxls. Use stored data!
-					closest = knob1.dataObj.px;
 
 				followPos = getFollowPos();
 
@@ -973,13 +976,12 @@ function sGlideRange(self, options){
 				if (!isLocked && !barDrag){
 					if (target === knob1){
 						const knob2_style_left	= knob2.data('px');
-						// const knob2_offset_left	= knob2_style_left;
 						const knob2_offset_left	= knob2.offsetLeft;
-console.log('>> knob1', knob2_offset_left, knob2_style_left);
+						// const knob2_offset_left	= knob2_style_left;
+
 						// if (x <= stopper && (!is_snap || snapType !== 'hard')){
 						// if (x <= stopper || (is_snap && snapType === 'hard')){
 						if (x <= stopper){
-							console.log('>> A');
 							if (b) b = false;
 							if (!a){
 								css(knob1, {'left': 0}).data('px', 0);
@@ -989,7 +991,6 @@ console.log('>> knob1', knob2_offset_left, knob2_style_left);
 						// } else if (x >= knob2_offset_left-stopper && (!is_snap || snapType !== 'hard')){
 						// } else if (x >= knob2_offset_left-stopper || (is_snap && snapType === 'hard')){
 						} else if (x >= knob2_offset_left-stopper){ // should use this, but throws error
-							console.log('>> k1 constraint right',knob2_style_left);
 							if (a) a = false;
 							if (is_snap && snapType === 'hard') return a;
 							if (!b){
@@ -999,21 +1000,19 @@ console.log('>> knob1', knob2_offset_left, knob2_style_left);
 								b = true;
 							}
 						} else {
-							console.log('>> C');
 							a = b = false;
-							css(knob1, {'left': (x-stopper)}).data('px', (x-stopper));
+							css(knob1, {'left': m}).data('px', m);
 							css(follow1, {'width': x});
 							snapDragon(m);
 						}
 					} else if (target === knob2){
 						const knob1_style_left	= knob1.data('px');
-						// const knob1_offset_left	= knob1_style_left;
 						const knob1_offset_left	= knob1.offsetLeft;
-console.log('>> knob2', knob1_offset_left, knob1_style_left);
+						// const knob1_offset_left	= knob1_style_left;
+
 						// if (x <= knob1_offset_left+stopper+knobWidth && (!is_snap || snapType !== 'hard')){
 						// if (x <= knob1_offset_left+stopper+knobWidth || (is_snap && snapType === 'hard')){
 						if (x <= knob1_offset_left+stopper+knobWidth){
-							console.log('>> k2 constrain left',knob1_style_left);
 							if (b) b = false;
 							if (is_snap && snapType === 'hard') return b;
 							// return b;
@@ -1034,7 +1033,7 @@ console.log('>> knob2', knob1_offset_left, knob1_style_left);
 							}
 						} else {
 							a = b = false;
-							css(knob2, {'left': (x-stopper-knobWidth)}).data('px', (x-stopper-knobWidth));
+							css(knob2, {'left': (m-knobWidth)}).data('px', (m-knobWidth));
 							css(follow2, {'width': x});
 							snapDragon(m);
 						}
@@ -1044,7 +1043,6 @@ console.log('>> knob2', knob1_offset_left, knob1_style_left);
 						// if (x <= stopper && (!is_snap || snapType !== 'hard')){ // avoids snapping twice due to contraint?
 						// if (x <= stopper || (is_snap && snapType === 'hard')){
 						if (x <= stopper){
-							console.log('>> k1 constrain left');
 							if (b) b = false;
 							if (!a){
 								css(knob1, {'left': 0}).data('px', 0);
@@ -1057,7 +1055,6 @@ console.log('>> knob2', knob1_offset_left, knob1_style_left);
 						// } else if (x >= self_width-lockedDiff-stopper && (!is_snap || snapType !== 'hard')){
 						// } else if (x >= self_width-lockedDiff-stopper || (is_snap && snapType === 'hard')){
 						} else if (x >= self_width-lockedDiff-stopper){
-							console.log('>> k1 constrain right');
 							if (a) a = false;
 							if (!b){
 								css(knob2, {'left': (self_width-knobWidth*2)}).data('px', (self_width-knobWidth*2));
@@ -1069,10 +1066,10 @@ console.log('>> knob2', knob1_offset_left, knob1_style_left);
 							}
 						} else {
 							a = b = false;
-							css(knob1, {'left': (x-stopper)}).data('px', (x-stopper));
+							css(knob1, {'left': m}).data('px', m);
 							css(follow1, {'width': x});
 
-							css(knob2, {'left': (x-stopper-knobWidth+lockedDiff)}).data('px', (x-stopper-knobWidth+lockedDiff));
+							css(knob2, {'left': (m-knobWidth+lockedDiff)}).data('px', (m-knobWidth+lockedDiff));
 							css(follow2, {'width': (x+lockedDiff)});
 							snapDragon(m);
 						}
@@ -1080,7 +1077,6 @@ console.log('>> knob2', knob1_offset_left, knob1_style_left);
 						// if (x <= lockedDiff+stopper && (!is_snap || snapType !== 'hard')){
 						// if (x <= lockedDiff+stopper || (is_snap && snapType === 'hard')){
 						if (x <= lockedDiff+stopper){
-							console.log('>> k2 constrain left');
 							if (b) b = false;
 							if (!a){
 								css(knob2, {'left': (lockedDiff-knobWidth)}).data('px', (lockedDiff-knobWidth));
@@ -1093,7 +1089,6 @@ console.log('>> knob2', knob1_offset_left, knob1_style_left);
 						// } else if (x >= self_width-stopper && (!is_snap || snapType !== 'hard')){
 						// } else if (x >= self_width-stopper || (is_snap && snapType === 'hard')){
 						} else if (x >= self_width-stopper){
-							console.log('>> k2 constrain right');
 							if (a) a = false;
 							if (!b){
 								css(knob2, {'left': (self_width-knobWidth*2)}).data('px', (self_width-knobWidth*2));
@@ -1105,10 +1100,10 @@ console.log('>> knob2', knob1_offset_left, knob1_style_left);
 							}
 						} else {
 							a = b = false;
-							css(knob2, {'left': (x-stopper-knobWidth)}).data('px', (x-stopper-knobWidth));
+							css(knob2, {'left': (m-knobWidth)}).data('px', (m-knobWidth));
 							css(follow2, {'width': x});
 
-							css(knob1, {'left': (x-stopper-lockedDiff)}).data('px', (x-stopper-lockedDiff));
+							css(knob1, {'left': (m-lockedDiff)}).data('px', (m-lockedDiff));
 							css(follow1, {'width': (x-lockedDiff)});
 							snapDragon(m);
 						}
