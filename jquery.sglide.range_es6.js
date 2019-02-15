@@ -576,15 +576,16 @@ version:	2.0.0
 
 				// get closest snap mark (px)
 				const getClosest = x => {
-					var c = 0;
-					var kw = (snapType === 'hard') ? knob1.width()/2 : 0;
+					var c = 0, kw = (snapType === 'hard') ? knob1.width()/2 : 0;
 					for (let val of snapPxlValues) {
 						if (Math.abs(val - x + kw) < Math.abs(c - x + kw)) c = val;
 					}
 					return c;
 				};
 
-				const thisKnobPos = (x, w) => (target[0] === knob2[0]) ? x - w * 0.875 : x + (w - w * 0.875);
+				// const thisKnobPos = (x, w) => (target[0] === knob2[0]) ? x - w * 0.875 : x + (w - w * 0.875);
+				const thisKnobPos = (x, w) => (target[0] === knob2[0]) ? x - w * 0.875 : x + w / 8;
+				// const thatKnobPos = (x, w) => (target[0] === knob2[0]) ? x - w * 0.875 : x + w / 8;
 
 				const doSnap = (kind, m) => {
 					if (is_snap){
@@ -608,23 +609,26 @@ version:	2.0.0
 							// physically snap it
 
 							let boolN = false;
-							
+
 							const lockedRangeAdjusts = () => {
 								// first compare which is closer: m (this) or n (that)
 								// if n, m = n, closest = closest_n
 								// if locked & startAts different
 								if ((isLocked || barDrag) && settings.startAt[0] !== settings.startAt[1]){
 									// snap other, else snap current knob
-									let currentKnobToClosest = Math.abs(closest - m + knobWidthHalf);
-									let otherKnobToClosest = Math.abs(closest_n - n);
+									let thisKnobToClosest = Math.abs(closest - m + knobWidthHalf);
+									let thatKnobToClosest = Math.abs(closest_n - n);
 
-									simulSnapped = Math.abs(currentKnobToClosest - otherKnobToClosest) < 1;
-
-									if (currentKnobToClosest > otherKnobToClosest){
+									simulSnapped = Math.abs(thisKnobToClosest - thatKnobToClosest) < 1;
+									// snap other, else snap current knob
+									if (thisKnobToClosest > thatKnobToClosest){
 										// that knob
 										boolN = true;
 										closest = closest_n;
-										m = n + (knobWidthHalf - knobWidthHalf * 0.875);
+										// m = n + (knobWidthHalf - knobWidthHalf * 0.875);
+										m = n + knobWidthHalf / 8;
+										// m = thisKnobPos(n, knobWidthHalf);
+										// console.log('>> that knob, this',target[0]);
 									} else m = thisKnobPos(m, knobWidthHalf);
 								} else m = thisKnobPos(m, knobWidthHalf);
 							};

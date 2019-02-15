@@ -679,8 +679,7 @@ function sGlideRange(self, options){
 
 		// get closest snap mark (px)
 		const getClosest = x => {
-			var c = 0;
-			var kw = (snapType === 'hard') ? knob1.offsetWidth/2 : 0;
+			var c = 0, kw = (snapType === 'hard') ? knob1.offsetWidth/2 : 0;
 			for (let val of snapPxlValues){
 				if (Math.abs(val - x + kw) < Math.abs(c - x + kw)) c = val;
 			}
