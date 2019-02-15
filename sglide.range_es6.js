@@ -686,7 +686,8 @@ function sGlideRange(self, options){
 			return c;
 		};
 
-		const thisKnobPos = (x, w) => (target === knob2) ? x - w * 0.875 : x + (w - w * 0.875);
+		const thisKnobPos = (x, w) => (target === knob2) ? x - w * 0.875 : x + w / 8;
+		// const thisKnobPos = (x, w) => (target === knob2) ? x - w * 0.875 : x + (w - w * 0.875);
 
 		const doSnap = (kind, m) => {
 			if (is_snap){
@@ -728,7 +729,8 @@ function sGlideRange(self, options){
 								// that knob
 								boolN = true;
 								closest = closest_n;
-								m = n + (knobWidthHalf - knobWidthHalf * 0.875);
+								m = n + knobWidthHalf / 8;
+								// m = n + (knobWidthHalf - knobWidthHalf * 0.875);
 							} else m = thisKnobPos(m, knobWidthHalf);
 						} else m = thisKnobPos(m, knobWidthHalf);
 					};

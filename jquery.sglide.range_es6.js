@@ -625,10 +625,8 @@ version:	2.0.0
 										// that knob
 										boolN = true;
 										closest = closest_n;
-										// m = n + (knobWidthHalf - knobWidthHalf * 0.875);
 										m = n + knobWidthHalf / 8;
-										// m = thisKnobPos(n, knobWidthHalf);
-										// console.log('>> that knob, this',target[0]);
+										// m = n + (knobWidthHalf - knobWidthHalf * 0.875);
 									} else m = thisKnobPos(m, knobWidthHalf);
 								} else m = thisKnobPos(m, knobWidthHalf);
 							};
