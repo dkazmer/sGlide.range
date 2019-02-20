@@ -349,7 +349,7 @@ function sGlideRange(self, options){
 			isLocked		= settings.locked;
 
 		const	vert		= settings.vertical,
-			is_snap			= (settings.snap.points > 0 && settings.snap.points <= 11),
+			is_snap			= (settings.snap.points > 1 && settings.snap.points <= 11),
 			markers			= (is_snap && settings.snap.marks),
 			snapType		= (settings.snap.type != 'hard' && settings.snap.type != 'soft') ? false : settings.snap.type,
 			r_corners		= settings.pill,
@@ -568,7 +568,7 @@ function sGlideRange(self, options){
 		};
 
 		const setSnapValues = () => {
-			if (snaps === 1) snaps = 2;
+			// if (snaps === 1) snaps = 2;
 
 			// pixel
 			var kw = Math.round((knob1.offsetWidth + knob2.offsetWidth) / 2);

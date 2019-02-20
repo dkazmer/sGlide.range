@@ -223,7 +223,7 @@ version:	2.0.0
 					isLocked		= settings.locked;
 
 				const vert			= settings.vertical,
-					is_snap			= (settings.snap.points > 0 && settings.snap.points <= 11),
+					is_snap			= (settings.snap.points > 1 && settings.snap.points <= 11),
 					markers			= (is_snap && settings.snap.marks),
 					snapType		= (settings.snap.type != 'hard' && settings.snap.type != 'soft') ? false : settings.snap.type,
 					r_corners		= settings.pill,
@@ -471,7 +471,7 @@ version:	2.0.0
 				};
 
 				const setSnapValues = () => {
-					if (snaps === 1) snaps = 2;
+					// if (snaps === 1) snaps = 2;
 
 					// pixel
 					const kw = (knob1.width() + knob2.width()) / 2;
