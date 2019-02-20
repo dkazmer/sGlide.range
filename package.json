@@ -1,8 +1,8 @@
 {
   "name": "sglide.range",
-  "version": "1.3.0",
-  "description": "sGlide.range is a jQuery- or standalone plugin that generates a simple, highly flexible, feature-rich & mobile-ready range slider.",
-  "main": "jquery.sglide.range.js",
+  "version": "2.0.0",
+  "description": "sGlide.range is a JS (or jQ) plugin that generates a simple, highly flexible, feature-rich, mobile-ready range slider.",
+  "main": "sglide.range.2.min.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -32,6 +32,6 @@
   },
   "homepage": "http://webshifted.com/sGlide.range",
   "dependencies": {
-    "jquery": ">=1.7"
+    "jquery": ">=3"
   }
 }
