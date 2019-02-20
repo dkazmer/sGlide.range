@@ -8,7 +8,7 @@ version:	2.0.0
 
 	version history:
 		2.0.0	retina setting default set to false, better code for retina display handling in general; minor refactoring; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing;
-				equalized snap point flank distance; added handleSize prop; restored snapping other knob on knob-drag when locked; removed barriers to using same startAt values (17.01.2019)
+				equalized snap point flank distance; added handleSize prop; restored snapping other knob on knob-drag when locked; removed barriers to using same startAt values; start snap points at 2 (20.02.2019)
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
@@ -349,7 +349,7 @@ function sGlideRange(self, options){
 			isLocked		= settings.locked;
 
 		const	vert		= settings.vertical,
-			is_snap			= (settings.snap.points > 0 && settings.snap.points <= 11),
+			is_snap			= (settings.snap.points > 1 && settings.snap.points <= 11),
 			markers			= (is_snap && settings.snap.marks),
 			snapType		= (settings.snap.type != 'hard' && settings.snap.type != 'soft') ? false : settings.snap.type,
 			r_corners		= settings.pill,
@@ -568,7 +568,7 @@ function sGlideRange(self, options){
 		};
 
 		const setSnapValues = () => {
-			if (snaps === 1) snaps = 2;
+			// if (snaps === 1) snaps = 2;
 
 			// pixel
 			var kw = Math.round((knob1.offsetWidth + knob2.offsetWidth) / 2);

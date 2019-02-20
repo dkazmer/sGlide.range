@@ -1,6 +1,6 @@
 # sGlide.range
 
-A derivative of sGlide. Select the range between custom min and max numbers. Returns selected range numbers and percentage values. Uses optional smart snapping. Apply your own CSS.
+A derivative of sGlide. Select the range between custom min and max numbers. Returns selected range numbers and corresponding percentage values. Uses optional smart snapping. Apply your own CSS.
 
 For details, visit [home page](http://webshifted.com/sGlide.range/).
 

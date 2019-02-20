@@ -2,11 +2,12 @@
 
 /***********************************************************************************
 
-author:		Daniel Kazmer - http://webshifted.com
+author:		Daniel B. Kazmer (webshifted.com)
 created:	1.11.2014
-version:	1.3.0
+version:	2.0.0
 
 	version history:
+		2.0.0	retina setting default set to false ... improved vertical positioning and alignments; unit default set to null ()
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
@@ -30,7 +31,7 @@ version:	1.3.0
 			},
 			disabled:				// boolean - default: false
 			vertical:				// boolean - default: false
-			drop/drag/onSnap/onload: function(o){
+			drop/drag/onSnap: o => {
 				console.log('returned object',o);
 			}
 		});
@@ -75,7 +76,6 @@ version:	1.3.0
 					$(document).off('keydown.'+guid).off('keyup.'+guid);
 
 				$(document).off(mEvt.move+'.'+guid).off(mEvt.up+'.'+guid);
-				$(window).off('orientationchange.'+guid);
 				self.off(mEvt.down);
 				self.children('.slider_knob').off(mEvt.up).off(mEvt.down).remove();
 				self.children('.follow_bar').off(mEvt.down).remove();
@@ -97,7 +97,7 @@ version:	1.3.0
 				valueObj[guid] = pct;
 
 				// set pixel positions
-				var selfWidth	= self.width(),
+				var selfWidth	= Math.round(self.width()),
 					knobWidth	= knob1.width() * 2,
 					px			= [],
 					pxAdjust	= [];
@@ -115,10 +115,10 @@ version:	1.3.0
 				}
 
 				// gui
-				knob1.css('left', pxAdjust[0]+'px');
-				knob2.css('left', pxAdjust[1]+'px');
-				follow1.css('width', (px[0]-knobWidth/4)+'px');
-				follow2.css('width', (px[1]+knobWidth/4)+'px');
+				knob1.css('left', pxAdjust[0]).data('px', pxAdjust[0]);
+				knob2.css('left', pxAdjust[1]).data('px', pxAdjust[1]);
+				follow1.css('width', (px[0]-knobWidth/4));
+				follow2.css('width', (px[1]+knobWidth/4));
 			});
 			return this;
 		},
@@ -155,19 +155,20 @@ version:	1.3.0
 					'image'			: 'none',	// full path of image
 					'height'		: 40,
 					'width'			: 100,
-					'unit'			: '%',	// 'px' or '%'
+					'unit'			: null,	// 'px' or '%'
 					'pill'			: true,
 					'snap'			: {
 						'marks'		: false,
 						'type'		: false,
-						'points'	: 0
+						'points'	: 0,
+						'sensitivity': 2
 					},
+					'totalRange'	: [0,0],
 					'disabled'		: false,
 					'vertical'		: false,
-					'totalRange'	: [0,0],
 					'locked'		: false,
-					'noKnob'		: false,
-					'retina'		: true
+					'noHandle'		: false,
+					'retina'		: false
 				}, options);
 
 				self.removeAttr('style');	// remove user inline styles
@@ -214,16 +215,14 @@ version:	1.3.0
 				var result_from		= 0,
 					result_to		= 0,
 					vert			= settings.vertical,
-					markers			= (settings.snap.points > 0 && settings.snap.points <= 9 && settings.snap.marks),
+					is_snap			= (settings.snap.points > 0 && settings.snap.points <= 11),
+					markers			= (is_snap && settings.snap.marks),
 					snapType		= (settings.snap.type != 'hard' && settings.snap.type != 'soft') ? false : settings.snap.type,
 					knob_bg			= '#333',
-					knob_width_css	= (settings.noKnob ? '0' : '2%'),
+					knob_width_css	= (settings.noHandle ? '0' : '2%'),
 					knob_height_css	= 'inherit',
-					self_height		= Math.round(settings.height)+'px',
 					r_corners		= settings.pill,
-					imageBln		= (settings.image != 'none' && settings.image !== '' && !settings.noKnob),
-					imgLoaded		= false,
-					resize			= false,
+					imageBln		= (settings.image != 'none' && settings.image !== '' && !settings.noHandle),
 					retina			= (window.devicePixelRatio > 1) && settings.retina,
 					customRange		= (settings.totalRange[0] !== 0 || settings.totalRange[1] !== 0) && settings.totalRange[0] < settings.totalRange[1],
 					isLocked		= settings.locked;
@@ -235,7 +234,7 @@ version:	1.3.0
 					var img = settings.image;
 
 					// string or array
-					var multiImageBln = (img instanceof Array) ? true : false;
+					var multiImageBln = (img instanceof Array);
 
 					var processRetinaImage = function(file){
 						var rImgTemp = file.split('.');
@@ -243,6 +242,7 @@ version:	1.3.0
 
 						rImgTemp[rImgTemp_length-2] = rImgTemp[rImgTemp_length-2] + '@2x';
 						file = '';
+
 						for (var i = 0; i < rImgTemp_length; i++){
 							file += rImgTemp[i] + ((i < rImgTemp_length-1) ? '.' : '');
 						}
@@ -265,7 +265,7 @@ version:	1.3.0
 						var multiImageIndex = 0;
 						var loadNextImage = function(el){
 							newImage = el.find('img');
-							newImage.attr('src', img[multiImageIndex]).load(function(){
+							newImage.attr('src', img[multiImageIndex]).on('load', function(){
 
 								var thisHeight = newImage[0].naturalHeight;
 
@@ -329,7 +329,7 @@ version:	1.3.0
 						// retina handling
 						if (retina) img = processRetinaImage(img);
 
-						knobs.children('img').load(function(){
+						knobs.children('img').on('load', function(){
 							var imgEl = $(this);
 							var thisHeight = imgEl[0].naturalHeight;
 							
@@ -387,14 +387,15 @@ version:	1.3.0
 				// styles
 
 				// validate some user settings
-				var unit = settings.unit, width = settings.width;
-				if (unit != 'px' && unit != '%') unit = '%';
-				else if (unit == 'px') width = Math.round(width);
-				else if (unit == '%' && Math.round(width) > 100) width = 100;
+				var width = settings.width;
+				var unit = (!settings.unit && !vert) ? '%' : 'px';
+
+				if (unit === 'px') width = Math.round(width);
+				else if (unit === '%' && Math.round(width) > 100) width = 100;
 
 				self.css({
 					'width': width + unit,
-					'height': self_height,
+					'height': settings.height+'px',
 					'text-align': 'left',
 					'margin': 'auto',
 					'z-index': '997',
@@ -402,7 +403,11 @@ version:	1.3.0
 					'-webkit-touch-callout': 'none'
 				});
 
-				var self_width = self.width();
+				var self_width			= Math.round(self.width());
+				var self_width_round	= Math.round(self_width / 2); 	// float value will blur vertical
+				var self_height			= Math.round(self.height());
+				var self_height_round	= Math.round(self_height / 2); 	// float value will blur vertical
+				var translate			= ' translate(-'+Math.abs(self_width_round - self_height_round)+'px, 0)';
 
 				var cssContentBox = {
 					'-webkit-box-sizing': 'content-box',
@@ -417,16 +422,16 @@ version:	1.3.0
 					'-ms-user-select': 'none',
 					'user-select': 'none'
 				}, cssRotate = {
-					'-webkit-transform': 'rotate(-90deg)',
-					'-khtml-transform': 'rotate(-90deg)',
-					'-moz-transform': 'rotate(-90deg)',
-					'-ms-transform': 'rotate(-90deg)',
-					'transform': 'rotate(-90deg)',
-					'-webkit-transform-origin': self_width+'px 0',
-					'-khtml-transform-origin': self_width+'px 0',
-					'-moz-transform-origin': self_width+'px 0',
-					'-ms-transform-origin': self_width+'px 0',
-					'transform-origin': self_width+'px 0',
+					'-webkit-transform': 'rotate(-90deg)'+translate,
+					'-khtml-transform': 'rotate(-90deg)'+translate,
+					'-moz-transform': 'rotate(-90deg)'+translate,
+					'-ms-transform': 'rotate(-90deg)'+translate,
+					'transform': 'rotate(-90deg)'+translate,
+					'-webkit-transform-origin': self_width_round+'px '+self_height_round+'px',
+					'-khtml-transform-origin': self_width_round+'px '+self_height_round+'px',
+					'-moz-transform-origin': self_width_round+'px '+self_height_round+'px',
+					'-ms-transform-origin': self_width_round+'px '+self_height_round+'px',
+					'transform-origin': self_width_round+'px '+self_height_round+'px',
 					'filter': 'progid:DXImageTransform.Microsoft.BasicImage(rotation=3)'
 				};
 
@@ -436,9 +441,9 @@ version:	1.3.0
 					'width': knob_width_css,
 					'background': knob_bg,
 					'height': knob_height_css,
-					// 'display': (!settings.noKnob ? 'inline-block' : 'none'),
+					// 'display': (!settings.noHandle ? 'inline-block' : 'none'),
 					'display': 'inline-block',
-					'visibility': (!settings.noKnob ? 'visibe' : 'hidden'),
+					'visibility': (!settings.noHandle ? 'visibe' : 'hidden'),
 					'cursor': (!settings.disabled ? 'pointer' : 'default'),
 					'font-size': '0',
 					'position': 'relative',
@@ -457,58 +462,94 @@ version:	1.3.0
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// snap marks, vertical
 
+				var preSnap = function(){
+					// snap to nearest point on hard or snapOffset
+					var was_locked = isLocked;
+					if (was_locked) isLocked = false;
+
+					if (snapType === 'hard'){
+						target = knob1;
+						snapDragon(knob1[0].offsetLeft);
+						target = knob2;
+						snapDragon(knob2[0].offsetLeft);
+					} else if (snapType === 'soft'){
+						var snapKnobs = function(el){
+							moved = true;
+							target = el;
+							doSnap('soft', el[0].offsetLeft);
+						};
+
+						snapKnobs(knob1);
+						snapKnobs(knob2);
+					}
+
+					if (was_locked) isLocked = true;
+
+					valueObj[guid] = getPercent(knob1.data('px'), knob2.data('px'));
+				};
+
 				// snap to
-				var snapping_on = false;
 				var snaps = Math.round(settings.snap.points);
+				var marks = null;
 				var snapPctValues = [0];
-				var drawSnapmarks = function(resize){
-					if (snaps === 1) snaps = 2;
-				
-					// pixels
-					var kw = knob1.width()*2;
-					var w = self_width - kw;
-					var increment = w / (snaps - 1);
-					var snapValues = [0];
+				var snapPxlValues = [0];
+
+				var setPixelValues = function(sw, kw){
+					snapPxlValues = [0];
+					var increment = sw / (snaps - 1);
 					var step = increment;
-					while (step <= w+2){	// added 2px to fix glitch when drawing last mark at 7 or 8 snaps (accounts for decimal)
-						snapValues.push(step);
+
+					while (step <= sw){
+						snapPxlValues.push(step);
 						step += increment;
 					}
+				};
+
+				var setSnapValues = function(){
+					if (snaps === 1) snaps = 2;
+
+					// pixel
+					var kw = (knob1.width() + knob2.width()) / 2;
+					var sw = self_width - kw * 2;
+					// snapPxlValues[0] += kw;
+
+					setPixelValues(sw, kw);
+
 					// percentage
-					increment = 100 / (snaps - 1);
-					step = increment;
-					while (step <= 101){	// added 1% to fix glitch when drawing last mark at 7 or 8 snaps (accounts for decimal)
-						snapPctValues.push(step);
-						step += increment;
+					for (var i = 1; i < snapPxlValues.length; i++){
+						snapPctValues.push(snapPxlValues[i] / sw * 100);
 					}
 
-					snapping_on = true;
+					snapPctValues[snapPctValues.length-1] = 100;
 
-					// markers
-					if (markers){
-						var marks = null;
-						if (!resize){
-							self.after('<div id="'+guid+'_markers"></div>');
-							
-							marks = $('#'+guid+'_markers');
-							
-							marks.css({
-								'width': self_width+'px', //settings.width + unit,
-								'margin': 'auto',
-								'padding-left': (kw/2)+'px',
-								'-webkit-touch-callout': 'none',
-								'box-sizing': 'border-box'
-							}).css(cssUserSelect);
-						} else {
-							marks = $('#'+guid+'_markers');
-							marks.html('');
-						}
+					if (markers) drawSnapmarks();
+				};
 
+				var drawSnapmarks = function(){
+					var kw_ = knob1.width();
+
+					self.after('<div id="'+guid+'_markers" class="sglide-markers"></div>');
+					
+					marks = $('#'+guid+'_markers');
+					
+					marks.css({
+						'position': 'relative',
+						'width': self_width+'px', //settings.width + unit,
+						'margin': 'auto',
+						'-webkit-touch-callout': 'none',
+						'box-sizing': 'border-box'
+					}).css(cssUserSelect);
+
+					if (marks){
 						var str = '';
+						var val = null;
 
-						for (var i = 0; i < snapValues.length; i++)
-							str += '<div style="display:inline-block; width:0; height:5px; border-left:#333 solid 1px; position:relative; left:'+
-								(snapValues[i]-i)+'px; float:left"></div>';
+						// for (var i = 0; i < snapValues.length; i++){
+						for (var i = snaps - 1; i >= 0; i--){
+							val = (self_width - kw_*2) / (snaps-1) * i + kw_;
+							// str += '<div style="display:inline-block; width:0; height:5px; border-left:#333 solid 1px; position:relative; left:'+val+'px; float:left"></div>';
+							str += '<div style="width:0; height:5px; border-left:#333 solid 1px; position:absolute; left:'+val+'px"></div>';
+						}
 
 						marks.html(str);
 					}
@@ -522,7 +563,7 @@ version:	1.3.0
 						var a = $('#'+guid+', #'+guid+'_markers');
 
 						a.wrapAll('<div id="'+guid+'_vert-marks" style="margin:0; z-index:997; width:'+width+unit+
-							'; -webkit-backface-visibility:hidden; -moz-backface-visibility:hidden; -ms-backface-visibility:hidden; backface-visibility:hidden"></div>');
+							'; -webkit-backface-visibility:hidden; -moz-backface-visibility:hidden; -ms-backface-visibility:hidden; backface-visibility:hidden; display:inline-block"></div>');
 
 						var vmarks = $('#'+guid+'_vert-marks');
 
@@ -535,7 +576,8 @@ version:	1.3.0
 						// check whether even by even or odd by odd to fix blurred elements
 						self.css({
 							'margin': '0', 'top': '0', 'left': '0',
-							'backface-visibility': 'hidden'
+							'backface-visibility': 'hidden',
+							'display': 'inline-block'
 						}).css(cssRotate);
 					}
 					self.addClass('vertical');
@@ -551,11 +593,21 @@ version:	1.3.0
 					z		= null;
 
 				// snapping
-				var storedSnapValues = ['a-1', 'b-1'];
+				// var storedSnapValues = {'from': null, 'to': null};
+				var storedSnapValues = valueObj[guid];	//[-1, -1];
+				// var storedSnapValues = valueObj[guid];
+				var is_same = false;
 				var storedBarSnapValue = null;
+				var is_onSnapPoint = false;
+				// var was_onSnapPoint = false;
+				var was_onSnapPoint_left = true;
+				var was_onSnapPoint_right = true;
+				var simulSnap = false;
+				var moved = false;
+
 				var doSnap = function(kind, m){
-					if (snaps > 0 && snaps < 10){	// min 1, max 9
-						var sense = (settings.snap.sensitivity !== undefined ? settings.snap.sensitivity : 2);
+					if (is_snap){
+						var sense = settings.snap.sensitivity;
 
 						// although snap is enabled, sensitivity may be set to nill, in which case marks are drawn but won't snap to
 						if (sense || snapType === 'hard' || snapType === 'soft'){
@@ -564,29 +616,25 @@ version:	1.3.0
 								knobWidthQuarter	= knobWidthHalf / 2,
 								snapOffset			= (sense && sense > 0 && sense < 4 ? (sense + 1) * 5 : 15) - 3;
 
-							// % to px
-							var snapPixelValues = [];
-							for (var i = 0; i < snapPctValues.length; i++)
-								snapPixelValues.push((self_width - knobWidth) * snapPctValues[i] / 100);
-
 							// get closest px mark, and set %
 							var closest = null, pctVal = 0;
-							$.each(snapPixelValues, function(i){
-								if (closest === null || Math.abs(this - m) < Math.abs(closest - m)){
-									closest = this | 0;
+							$.each(snapPxlValues, function(i, num){
+								if (closest === null || Math.abs(num - m) < Math.abs(closest - m)){
+									closest = num;// | 0.0;
 									pctVal = snapPctValues[i];
 								}
 							});
 
 							// if locked, get closest mark for other knob
-							if (isLocked || barDrag){
+							if (/*isLocked || */barDrag || barDrag_drop){
 								var closest_n = null, pctVal_n = 0, n = 0;
 
-								if (target[0] === knob1[0]) n = m + lockedDiff-target.width()*0.75; else n = m - lockedDiff;
+								if (target[0] === knob1[0]) n = m + lockedDiff - target.width();//*0.75;
+								else n = m - lockedDiff;// - target.width() * 0.5;
 
-								$.each(snapPixelValues, function(i){
-									if (closest_n === null || Math.abs(this - n) < Math.abs(closest_n - n)){
-										closest_n = this | 0;
+								$.each(snapPxlValues, function(i, num){
+									if (closest_n === null || Math.abs(num - n) < Math.abs(closest_n - n)){
+										closest_n = num;// | 0;
 										pctVal_n = snapPctValues[i];
 									}
 								});
@@ -600,9 +648,14 @@ version:	1.3.0
 								// first compare which is closer: m or n
 								// if n, m = n, closest = closest_n
 								// if locked & startAts different
-								if ((isLocked || barDrag) && settings.startAt[0] !== settings.startAt[1]){
+								if ((/*isLocked || */barDrag) && settings.startAt[0] !== settings.startAt[1]){
 									// snap other, else snap current knob
-									if (Math.abs(closest - m) > Math.abs(closest_n - n)){
+									var currentKnobToClosest = Math.abs(closest - m + knobWidthHalf);
+									var otherKnobToClosest = Math.abs(closest_n - n);
+
+									simulSnap = Math.abs(currentKnobToClosest - otherKnobToClosest) < 1 && is_onSnapPoint;
+
+									if (currentKnobToClosest > otherKnobToClosest){
 										boolN = true;
 										closest = closest_n;
 										m = (target[0] === knob1[0]) ? n-knobWidthQuarter : n;
@@ -620,127 +673,197 @@ version:	1.3.0
 										if (Math.abs(closest_n - knob1[0].offsetLeft) < Math.abs(closest - knob2[0].offsetLeft)){
 											target = knob1;
 											snapUpdate(closest_n, knobWidth);
+											was_onSnapPoint_right = true;
 											target = knob2;// reset
-											snapOutput(pctVal, 'from');
 										} else {
 											snapUpdate(closest, knobWidth);
-											snapOutput(pctVal, 'to');
+											was_onSnapPoint_left = true;
 										}
 									} else {
+										switch (target[0]){
+											case knob1[0]: was_onSnapPoint_left = true; break;
+											case knob2[0]: was_onSnapPoint_right = true; break;
+										}
+
 										snapUpdate(closest, knobWidth);
-										snapOutput(pctVal, ((target[0] === knob1[0]) ? 'from' : 'to'));
 									}
 
 
-								} else {
+								} else {	// true snap
 									lockedRangeAdjusts();
 
 									if (Math.round(Math.abs(closest - m + knobWidthHalf/8)) < snapOffset){
+										is_onSnapPoint = true;
 										snapUpdate(closest, knobWidth, boolN);
-										snapOutput(pctVal, ((target[0] === knob1[0]) ? 'from' : 'to'));
-
-									} else storedSnapValues = ['a-1', 'b-1'];
+									} else {
+										is_onSnapPoint = false;
+										// was_onSnapPoint = true;
+										if (target[0] === knob1[0] || barDrag && boolN) was_onSnapPoint_left = true;
+										else if (target[0] === knob2[0]) was_onSnapPoint_right = true;
+									}
 								}
 							} else {
 								lockedRangeAdjusts();
-								snapUpdate(closest, knobWidth, boolN);
-								return closest;
+								// snapUpdate(closest, knobWidth, boolN);
+
+								if (barDrag_drop || isLocked){
+									if (moved){
+										/*if (Math.abs(closest_n - knob1[0].offsetLeft + knobWidthHalf) < Math.abs(closest - knob2[0].offsetLeft)){
+											target = knob1;
+											was_onSnapPoint_left = true;	// seems to work, not sure why
+											snapUpdate(closest_n, knobWidth);
+											was_onSnapPoint_right = true;
+											target = knob2;// reset
+											return closest_n;
+										} else {
+											was_onSnapPoint_right = true;	// seems to work, not sure why
+											snapUpdate(closest, knobWidth);
+											was_onSnapPoint_left = true;
+											return closest;
+										}*/
+										if (target[0] === knob2[0]){
+											was_onSnapPoint_right = true;
+											// snapUpdate(closest, (barDrag_drop ? knobWidth : 0));
+											snapUpdate(closest, knobWidth);
+											was_onSnapPoint_left = true;
+											moved = false;
+											return closest;
+										} else {
+											was_onSnapPoint_left = true;
+											snapUpdate(closest, knobWidth);
+											was_onSnapPoint_right = true;
+											moved = false;
+											return closest;
+										}
+									}
+								} else {
+									switch (target[0]){
+										case knob1[0]: was_onSnapPoint_left = true; break;
+										case knob2[0]: was_onSnapPoint_right = true; break;
+									}
+
+									snapUpdate(closest, knobWidth);
+									return closest;
+								}
+
 							}
 						}
 					}
-				}, snapOutput = function(pct, which){ // callback: onSnap
-					var storedSnapIndex = 0;
-					var ab = null;
-
-					if (which === 'to'){
-						storedSnapIndex = 1;
-						ab = 'b'+pct;
-					} else {
-						ab = 'a'+pct;
+				}, snapOutput = function(which, closest){ // callback: onSnap
+					if (snapType === 'hard'){
+						var p = null;
+						switch (which){
+							case 0:
+								p = getPercent(closest, null)[0];
+								if (p === storedSnapValues[0]) return false;
+								break;
+							case 1:
+								p = getPercent(null, closest)[1];
+								if (p === storedSnapValues[1]) return false;
+								break;
+						}
 					}
 
-					if (options.onSnap && ab !== storedSnapValues[storedSnapIndex] || barDrag && ab !== storedBarSnapValue){
-						storedSnapValues[storedSnapIndex] = ab;
-						if (barDrag) storedBarSnapValue = ab;
-						var snapObj = null;
+					setResults();
 
-					// if (options.onSnap && ab !== storedSnapValues[storedSnapIndex]){
-					// 	storedSnapValues[storedSnapIndex] = ab;
-					// 	var snapObj = null;
+					var is_same = false;
+					var pcts = null;
 
-						if (which === 'to')
-							snapObj = updateME(getPercent([(storedSnapValues[0].indexOf('-1') !== -1) ? valueObj[guid][0] : storedSnapValues[0], pct]));
-						else
-							snapObj = updateME(getPercent([pct, (storedSnapValues[1].indexOf('-1') !== -1) ? valueObj[guid][1] : storedSnapValues[1]]));
-
-						// options.onSnap(snapObj);
-						setTimeout(options.onSnap, 0, snapObj);
+					// which handle?
+					switch (which){
+						case 0:
+							pcts = getPercent(closest, (knob2.data('px') ? knob2.data('px') : result_to));
+							break;
+						case 1:
+							pcts = getPercent((knob1.data('px') ? knob1.data('px') : result_from), closest);
+							break;
 					}
+
+					// callback
+					if (options.onSnap && !is_same){
+						storedSnapValues = pcts;
+						options.onSnap.call(self[0], updateME.apply(this, pcts));
+					}
+
 				}, snapUpdate = function(closest, knobWidth, isN){
 					var getFollowPos = function(){
 						return (closest+knobWidth/4+knobWidth/2);
 					};
 					
-					followPos = getFollowPos();
+					var followPos = getFollowPos();
+					var diff = null;
 
 					// -----------------------------
 
 					if ((target[0] === knob1[0] && !isN) || (target[0] === knob2[0] && isN)){
+						diff = function() { return (closest+lockedDiff-knobWidth/2); };
+
 						// patch: constraint right: if new knob2 pos > end knob2 pos, set new closest value;
-						if ((isLocked || barDrag) && (closest+lockedDiff-knobWidth/2) > (self_width - knobWidth)){
-							closest -= (closest+lockedDiff-knobWidth/2) - (self_width - knobWidth);
-						}
+						if ((isLocked || barDrag || barDrag_drop) && diff() > (self_width - knobWidth))
+							closest -= diff() - (self_width - knobWidth);
+						else
 
 						// constrain left knob to left side - glitch most evident at hard snap
 						// a prior constraint is already set, but you need this extra one - leave it active
 						if (closest > knob2[0].offsetLeft - (knobWidth/2))// && snapType === 'hard')
 							closest = knob2[0].offsetLeft - (knobWidth/2);
 
-						knob1[0].style.left		= closest+'px';
-						follow1[0].style.width	= (closest+knobWidth/4)+'px';
+						knob1.css('left', closest).data('px', closest);
+						follow1.css('width', (closest+knobWidth/4));
 
-						if (isLocked || barDrag){
-							knob2[0].style.left		= (closest+lockedDiff-knobWidth/2)+'px';
-							follow2[0].style.width	= (closest+knobWidth/4+lockedDiff)+'px';
+						if (isLocked || barDrag || barDrag_drop){
+							knob2.css('left', diff()).data('px', diff());
+							follow2.css('width', (closest+knobWidth/4+lockedDiff));
+						}
+
+						// output
+						if (was_onSnapPoint_left && !simulSnap){
+							snapOutput(0, closest);
+							was_onSnapPoint_left = false;
+							was_onSnapPoint_right = is_onSnapPoint;	// must on hard-snap; but causes double snap when both knob snapped
 						}
 					} else {
+						diff = function(){ return closest-lockedDiff+knobWidth/2; };
+
 						// patch: constraint left: if new knob1 pos < 0, set new closest value;
-						if ((isLocked || barDrag) && (closest-lockedDiff+knobWidth/2) <= 0){
-							closest -= closest-lockedDiff+knobWidth/2;
-							followPos = getFollowPos();
-						}
+						if ((isLocked || barDrag || barDrag_drop) && (closest-lockedDiff+knobWidth/2) <= 0)
+							// closest -= closest-lockedDiff+knobWidth/2;
+							closest -= diff();
+						else
 
 						// constrain right knob to right side - glitch most evident at hard snap
 						// a prior constraint is already set, but you need this extra one - leave it active
 						if (closest < knob1[0].offsetLeft)// && snapType === 'hard')
 							closest = knob1[0].offsetLeft;
 
-						knob2[0].style.left		= closest+'px';
-						follow2[0].style.width	= followPos+'px';
+						followPos = getFollowPos();
 
-						if (isLocked || barDrag){
-							knob1[0].style.left		= (closest-lockedDiff+knobWidth/2)+'px';
-							follow1[0].style.width	= (followPos-lockedDiff)+'px';
+						knob2.css('left', closest).data('px', closest);
+						follow2.css('width', followPos);
+
+						if (isLocked || barDrag || barDrag_drop){
+							knob1.css('left', diff()).data('px', diff());
+							follow1.css('width', (followPos-lockedDiff));
+						}
+
+						// output
+						if (was_onSnapPoint_right && !simulSnap){
+							snapOutput(1, closest);
+							was_onSnapPoint_right = false;
+							was_onSnapPoint_left = is_onSnapPoint;	// must on hard-snap; but causes double snap when both knob snapped
 						}
 					}
 				};
 
-				var eventWindowResize = function(){
-					self.sGlideRange('startAt', valueObj[guid]);
-					if (markers) drawSnapmarks(true);
-				};
-
-				if (isMobile || uAgent.match(/Windows Phone/i)){
-					// orientation
-					$(window).on('orientationchange.'+guid, eventWindowResize);
-				}
-
 				var z = null;
 				var a = false, b = false; // used to mitigate constraint checkers
+				var barDrag_drop = false;
+
 				var eventDocumentMouseMove = function(e){
 					// console.log('>> doc move', is_down);
 					if (is_down){
 						e = e || event;	// ie fix
+						moved = true;
 
 						// e.preventDefault();
 						// e.stopPropagation();
@@ -763,6 +886,7 @@ version:	1.3.0
 
 						if (barDrag){
 							if (z === null) z = target[0].offsetLeft - x + (knobWidth / 2);
+							// if (z === null) z = target.data('px') + knobWidth - x + knobWidth / 2;
 							x += z;
 							if (!gotLockedPositions) getLockedPositions();
 						}
@@ -775,122 +899,127 @@ version:	1.3.0
 
 						var targetEl	= target[0],
 							knob1El		= knob1[0],
-							knob2El		= knob2[0],
-							follow1El	= follow1[0],
-							follow2El	= follow2[0];
+							knob2El		= knob2[0];
+							// follow1El	= follow1[0],
+							// follow2El	= follow2[0];
 
 						if (!isLocked && !barDrag){
 							if (targetEl === knob1El){
-								var knob2_style_left	= knob2El.style.left;
+								var knob2_style_left	= knob2.data('px');
 								var knob2_offset_left	= knob2El.offsetLeft;
 
-								if (x <= stopper){
+								if (x <= stopper && (!is_snap || snapType !== 'hard')){
 									if (b) b = false;
 									if (!a){
-										targetEl.style.left = '0';
-										follow1El.style.width = stopper+'px';
+										// targetEl.style.left = '0';
+										knob1.css('left', 0).data('px', 0);
+										follow1.css('width', stopper);
 										a = true;
 									}
-								} else if (x >= knob2_offset_left-stopper){
+								} else if (x >= knob2_offset_left-stopper && (!is_snap || snapType !== 'hard')){
 									if (a) a = false;
 									if (!b){
-										targetEl.style.left = knob2_style_left;
-										follow1El.style.width = (knob2_offset_left-stopper)+'px';
+										// targetEl.style.left = knob2_style_left;
+										knob1.css('left', knob2_style_left).data('px', knob2_style_left);
+										follow1.css('width', (knob2_offset_left-stopper));
 										if (snapType === 'hard') snapOutput(getPercent([result_from, result_to]).percentRange[1], 'from');
 										b = true;
 									}
 								} else {
 									a = b = false;
-									targetEl.style.left = (x-stopper)+'px';
-									follow1El.style.width = x+'px';
-									if (!snapType || snapType === 'hard') doSnap('drag', m);
+									// targetEl.style.left = (x-stopper)+'px';
+									knob1.css('left', (x-stopper)).data('px', (x-stopper));
+									follow1.css('width', x);
+									snapDragon(m);
 								}
 							} else if (targetEl === knob2El){
-								var knob1_style_left	= knob1El.style.left;
+								var knob1_style_left	= knob1.data('px');
 								var knob1_offset_left	= knob1El.offsetLeft;
 
-								if (x <= knob1_offset_left+stopper+knobWidth){
+								if (x <= knob1_offset_left+stopper+knobWidth && (!is_snap || snapType !== 'hard')){
 									if (b) b = false;
 									if (!a){
-										targetEl.style.left = knob1_style_left;
-										follow2El.style.width = (knob1_offset_left+stopper+knobWidth)+'px';
+										// targetEl.style.left = knob1_style_left;
+										knob2.css('left', knob1_style_left).data('px', knob1_style_left);
+										follow2.css('width', (knob1_offset_left+stopper+knobWidth));
 										if (snapType === 'hard') snapOutput(getPercent([result_from, result_to]).percentRange[0], 'to');
 										a = true;
 									}
-								} else if (x >= self_width-stopper){
+								} else if (x >= self_width-stopper && (!is_snap || snapType !== 'hard')){
 									if (a) a = false;
 									if (!b){
-										targetEl.style.left = (self_width-knobWidth*2)+'px';
-										follow2El.style.width = (self_width-stopper)+'px';
+										// targetEl.style.left = (self_width-knobWidth*2)+'px';
+										knob2.css('left', (self_width-knobWidth*2)).data('px', (self_width-knobWidth*2));
+										follow2.css('width', (self_width-stopper));
 										b = true;
 									}
 								} else {
 									a = b = false;
-									targetEl.style.left = (x-stopper-knobWidth)+'px';
-									follow2El.style.width = x+'px';
-									if (!snapType || snapType === 'hard') doSnap('drag', m);
+									knob2.css('left', (x-stopper-knobWidth)).data('px', (x-stopper-knobWidth));
+									follow2.css('width', x);
+									snapDragon(m);
 								}
 							}
 						} else {
 							if (targetEl === knob1El){
-								if (x <= stopper){
+								if (x <= stopper && (!is_snap || snapType !== 'hard')){
 									if (b) b = false;
 									if (!a){
-										targetEl.style.left = '0';
-										follow1El.style.width = stopper+'px';
+										knob1.css('left', 0).data('px', 0);
+										follow1.css('width', stopper);
 
-										knob2El.style.left = (lockedDiff-knobWidth)+'px';
-										follow2El.style.width = (lockedDiff+stopper)+'px';
+										knob2.css('left', (lockedDiff-knobWidth)).data('px', (lockedDiff-knobWidth));
+										follow2.css('width', (lockedDiff+stopper));
 										a = true;
 									}
-								} else if (x >= self_width-lockedDiff-stopper){
+								} else if (x >= self_width-lockedDiff-stopper && (!is_snap || snapType !== 'hard')){
 									if (a) a = false;
 									if (!b){
-										knob2El.style.left = (self_width-knobWidth*2)+'px';
-										follow2El.style.width = (self_width-stopper)+'px';
+										knob2.css('left', (self_width-knobWidth*2)).data('px', (self_width-knobWidth*2));
+										follow2.css('width', (self_width-stopper));
 
-										targetEl.style.left = (self_width-lockedDiff-knobWidth)+'px';
-										follow1El.style.width = (self_width-lockedDiff-stopper)+'px';
+										knob1.css('left', (self_width-lockedDiff-knobWidth)).data('px', (self_width-lockedDiff-knobWidth));
+										follow1.css('width', (self_width-lockedDiff-stopper));
 										b = true;
 									}
 								} else {
 									a = b = false;
-									targetEl.style.left = (x-stopper)+'px';
-									follow1El.style.width = x+'px';
+									knob1.css('left', (x-stopper)).data('px', (x-stopper));
+									follow1.css('width', x);
 
-									knob2El.style.left = (x-stopper-knobWidth+lockedDiff)+'px';
-									follow2El.style.width = (x+lockedDiff)+'px';
-									if (!snapType || snapType === 'hard') doSnap('drag', m);
+									knob2.css('left', (x-stopper-knobWidth+lockedDiff)).data('px', (x-stopper-knobWidth+lockedDiff));
+									follow2.css('width', (x+lockedDiff));
+									snapDragon(m);
 								}
 							} else if (targetEl === knob2El){
-								if (x <= lockedDiff+stopper){
+								if (x <= lockedDiff+stopper && (!is_snap || snapType !== 'hard')){
 									if (b) b = false;
 									if (!a){
-										targetEl.style.left = (lockedDiff-knobWidth)+'px';
-										follow2El.style.width = (lockedDiff+stopper)+'px';
+										knob2.css('left', (lockedDiff-knobWidth)).data('px', (lockedDiff-knobWidth));
+										follow2.css('width', (lockedDiff+stopper));
 
-										knob1El.style.left = '0';
-										follow1El.style.width = stopper+'px';
+										knob1.css('left', 0).data('px', 0);
+										follow1.css('width', stopper);
 										a = true;
 									}
-								} else if (x >= self_width-stopper){
+								} else if (x >= self_width-stopper && (!is_snap || snapType !== 'hard')){
 									if (a) a = false;
 									if (!b){
-										targetEl.style.left = (self_width-knobWidth*2)+'px';
-										follow2El.style.width = (self_width-stopper)+'px';
+										knob2.css('left', (self_width-knobWidth*2)).data('px', (self_width-knobWidth*2));
+										follow2.css('width', (self_width-stopper));
 
-										knob1El.style.left = (self_width-lockedDiff-knobWidth)+'px';
-										follow1El.style.width = (self_width-lockedDiff-stopper)+'px';
+										knob1.css('left', (self_width-lockedDiff-knobWidth)).data('px', (self_width-lockedDiff-knobWidth));
+										follow1.css('width', (self_width-lockedDiff-stopper));
 										b = true;
 									}
 								} else {
 									a = b = false;
-									targetEl.style.left = (x-stopper-knobWidth)+'px';
-									follow2El.style.width = x+'px';
+									knob2.css('left', (x-stopper-knobWidth)).data('px', (x-stopper-knobWidth));
+									follow2.css('width', x);
 
-									knob1El.style.left = (x-stopper-lockedDiff)+'px';
-									follow1El.style.width = (x-lockedDiff)+'px';
-									if (!snapType || snapType === 'hard') doSnap('drag', m);
+									knob1.css('left', (x-stopper-lockedDiff)).data('px', (x-stopper-lockedDiff));
+									follow1.css('width', (x-lockedDiff));
+									snapDragon(m);
 								}
 							}
 						}
@@ -898,15 +1027,25 @@ version:	1.3.0
 						// results
 						setResults();
 
-						var state = self.data('state');
+						/*var state = self.data('state');
+						var value = updateME(getPercent(result_from), getPercent(result_to));
 
 						// update values
 						if (options.drag && state === 'active')
-							options.drag(updateME(getPercent([result_from, result_to])));
+							options.drag.call(self[0], value);*/
+
+
+						// update values
+						if (options.drag && self.data('state') === 'active'){
+							var value = updateME.apply(this, getPercent(result_from, result_to));
+							valueObj[guid] = value.percentRange;
+							options.drag.call(self[0], value);
+						}
 					}
 				};
 
 				var eventDocumentMouseUp = function(e){
+					barDrag_drop = barDrag;
 					var state = self.data('state');
 					is_down = barDrag = gotLockedPositions = a = b = false;
 					z = null;
@@ -914,41 +1053,51 @@ version:	1.3.0
 						if (snapType !== 'hard'){
 							e = e || event;	// ie fix
 							var x = null, base = 0;
+							var knobWidth	= knobs.width();
 
 							if (vert){
 								base = self.position().top + self_width;
 								x = base - ((!isMobile ? e.pageY : touchY)-2);
 							} else x = (!isMobile ? e.pageX : touchX) - self.offset().left;
-							
-							var knobWidth	= knobs.width();
-							var stopper		= knobWidth / 2;
+
+							if (barDrag_drop){
+								if (z === null) z = target[0].offsetLeft - x + (knobWidth / 2);
+								// if (z === null) z = target.data('px') + knobWidth - x + knobWidth / 2;
+								x += z;
+								if (!gotLockedPositions) getLockedPositions();
+							}
+
+							var stopper		= (target[0] === knob2[0]) ? knobWidth * 1.5 : knobWidth / 2;
 							var m			= x - stopper;	// true position of knob
 
 							// snap to
-							if (snaps > 0 && snaps < 10 && (snapType === 'soft' || snapType === 'hard')){
-								if (target[0] === knob1[0] && m <= knob2[0].offsetLeft)
-									result_from = doSnap((snapType === 'hard') ? 'hard' : 'soft', m);
-								else if (target[0] === knob2[0] && m >= knob1[0].offsetLeft)
-									result_to = doSnap((snapType === 'hard') ? 'hard' : 'soft', m);
+							if (barDrag_drop && snapType === 'soft') doSnap('soft', x);
+							else {
+								if (is_snap && snapType === 'soft'){
+									if (target[0] === knob1[0] && m <= knob2[0].offsetLeft)
+										result_from = doSnap('soft', m);
+									else if (target[0] === knob2[0] && m >= knob1[0].offsetLeft)
+										result_to = doSnap('soft', m);
+								}
 							}
 
-							if (options.drop) options.drop(updateME(getPercent([result_from, result_to])));
-							if (options.drag && state === 'active') options.drag(updateME(getPercent([result_from, result_to])));
+							var value = updateME.apply(this, getPercent(result_from, result_to));
+							valueObj[guid] = value.percentRange;
+
+							if (options.drop) options.drop.call(self[0], value);
+							if (options.drag && state === 'active') options.drag.call(self[0], value);
 						}
 						self.data('state', 'inactive');
 					}
+					gotLockedPositions = barDrag_drop = false;
+					z = null;
 				};
 
-				var initEventHandlers = function(){
-					// init touch event handlers
-					if (isMobile && !settings.disabled){
-						$(document).on(mEvt.down+'.'+guid, function(e){
-							// is_down = false;
-							touchX = e.originalEvent.touches[0].pageX;
-							touchY = e.originalEvent.touches[0].pageY;
-						});
-					}
+				var snapDragon = function(m){
+					if (is_snap && !snapType || snapType === 'hard') doSnap('drag', m);
+				}
 
+				var initEventHandlers = function(){
 					// init event handlers
 					if (!settings.disabled){
 						knobs.on(mEvt.down, function(e){
@@ -960,22 +1109,61 @@ version:	1.3.0
 						});
 
 						$(document).on(mEvt.move+'.'+guid, eventDocumentMouseMove).on(mEvt.up+'.'+guid, eventDocumentMouseUp);
+
 						follow2.on(mEvt.down, function(){
 							is_down = barDrag = true;
 							target = knob2;//knobs.eq(1);
 							self.data('state', 'active');
 						}).on(mEvt.up, function(){
-							is_down = barDrag = false;
+							// barDrag_drop = barDrag;
+							is_down = false;
 						});
+
+						// touch event handlers
+						if (isMobile){
+							$(document).on(mEvt.down+'.'+guid, function(e){
+								// is_down = false;
+								touchX = e.originalEvent.touches[0].pageX;
+								touchY = e.originalEvent.touches[0].pageY;
+							});
+						}
 					}
+
+					$(window).on('resize.'+guid, function(){
+						if (!vert){
+							self_width = Math.round(self.width());
+
+							var val = null;
+							var kw1	= knob1.width();
+							var pos	= (function(arr){
+								for (var i = 0; i < valueObj[guid].length; i++){
+									arr.push(valueObj[guid][i] / 100 * (self_width - kw1) + (kw1/2));
+								}
+								return arr;
+							})([]);
+
+							self.sGlideRange('startAt', valueObj[guid]);
+
+							if (marks){
+								setPixelValues((self_width - kw1 * 2), kw1);
+								marks.css('width', self_width)
+								.children('div').each(function(i, mark){
+									val = (self_width - kw1*2) / (snaps-1) * i + kw1;
+									$(mark).css('left', val);
+								});
+							}
+						}
+					});
 				};
 
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// functions
 
 				var setResults = function(){
-					result_from	= knob1[0].offsetLeft || 0;
-					result_to	= (knob2[0].offsetLeft - knob2.width()) || 0;
+					result_from	= knob1.data('px') || knob1[0].offsetLeft || 0;
+					result_to	= knob2.data('px') || (knob2[0].offsetLeft - knob2.width()) || 0;
+					// result_from	= knob1[0].offsetLeft + knob1.width();
+					// result_to	= knob2[0].offsetLeft;
 				};
 
 				// set locked positions
@@ -984,9 +1172,10 @@ version:	1.3.0
 					lockedDiff			= null,
 					gotLockedPositions	= false,
 					getLockedPositions	= function(){
-						lockedKnob1Pos	= knob1[0].offsetLeft;
-						lockedKnob2Pos	= knob2[0].offsetLeft;
-						lockedDiff		= lockedKnob2Pos - lockedKnob1Pos;
+						lockedKnob1Pos	= knob1.data('px') || knob1[0].offsetLeft;
+						lockedKnob2Pos	= knob2.data('px') || knob2[0].offsetLeft;
+						lockedDiff		= lockedKnob2Pos - lockedKnob1Pos + knob2.width();
+						// console.log('>> lockedDiff', lockedDiff		,'=' ,lockedKnob2Pos ,'-', lockedKnob1Pos);
 						gotLockedPositions = true;
 					};
 
@@ -994,53 +1183,59 @@ version:	1.3.0
 					var cstmStart = settings.totalRange[0];
 					var diff = settings.totalRange[1] - cstmStart;
 				}
-				var sendData = {};
-				var getPercent = function(arr){
-					var o = null, pcts = [], cstm = [], p = 0;
 
-					for (var i = 0; i < arr.length; i++){
-						// o = parseFloat(arr[i], 10);
-						o = arr[i] | 0;
-						// calculate percentage
-						p = o / (self_width - (knob1.width() * 2)) * 100;
-						pcts.push(p);
-						if (customRange) cstm.push(diff * p / 100 + cstmStart);
+				var getPercent = function(a, b){
+					var sw = self_width - knob1.width() - knob2.width();
+					var pctA = null, pctB = null;
+
+					if (a || a === 0){
+						// var pctA = (a + knob1.width()) / sw * 100;
+						pctA = a / sw * 100;
+						pctA = Math.min(pctA, 100);
 					}
 
-					// set data to send
-					sendData.percentRange = pcts;
-					if (customRange) sendData.customRange = cstm;
+					if (b || b === 0){
+						pctB = b / sw * 100;
+						pctB = Math.min(pctB, 100);
+					}
 
-					valueObj[guid] = pcts;
-					return sendData;
+					return [pctA, pctB];
 				};
 
-				var updateME = function(o){
-					o.id = guid;
-					o.el = self;
-					return o;
+				var updateME = function(_from, _to){
+					// set data to send
+					var sendData = {'percentRange': [_from, _to]};
+
+					// calculate unit
+					if (customRange){
+						var toCustom = function(pct){
+							return diff * pct / 100 + cstmStart;
+						};
+						sendData.customRange = [toCustom(_from), toCustom(_to)];
+					}
+
+					return sendData;
 				};
 
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// start
 
 				var setStartAt = function(){
-					var num = valueObj[guid];
-
-					self.sGlideRange('startAt', num);
+					self.sGlideRange('startAt', valueObj[guid]);
 					setResults();
-
-					var rlt = updateME(getPercent([result_from, result_to]));
 
 					// inits
 					initEventHandlers();
-					
-					if (snaps > 0 && snaps < 10)	drawSnapmarks();
-					if (vert)						verticalTransform();
-					if (options.onload)				options.onload(rlt);
-					if (isLocked)					getLockedPositions();
 
-					$(el).off('makeready.'+guid, setStartAt);
+					if (is_snap)		setSnapValues();
+					if (vert)			verticalTransform();
+					if (snapType === 'hard' || snapType === 'soft') preSnap();
+					if (isLocked)		getLockedPositions();
+					// if (options.onload)	options.onload(rlt);
+
+					var rlt = updateME.apply(this, valueObj[guid]);
+
+					$(el).off('makeready.'+guid, setStartAt).trigger('sGlide.ready', [rlt]);
 				};
 
 				// Listen for image loaded
