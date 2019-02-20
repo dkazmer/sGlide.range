@@ -1,0 +1,37 @@
+{
+  "name": "sglide.range",
+  "version": "1.3.0",
+  "description": "sGlide.range is a jQuery- or standalone plugin that generates a simple, highly flexible, feature-rich & mobile-ready range slider.",
+  "main": "jquery.sglide.range.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dkazmer/sGlide.range.git"
+  },
+  "keywords": [
+    "drag",
+    "slider",
+    "loadbar",
+    "gauge",
+    "vertical",
+    "smart",
+    "snapping",
+    "dynamic",
+    "mobile",
+    "arrow",
+    "keys",
+    "html",
+    "range"
+  ],
+  "author": "Daniel Kazmer",
+  "license": "GNU/GPL",
+  "bugs": {
+    "url": "https://github.com/dkazmer/sGlide.range/issues"
+  },
+  "homepage": "http://webshifted.com/sGlide.range",
+  "dependencies": {
+    "jquery": ">=1.7"
+  }
+}
