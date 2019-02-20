@@ -7,7 +7,8 @@ created:	11.11.2014
 version:	2.0.0
 
 	version history:
-		2.0.0	retina setting default set to false, better code for retina display handling in general; minor refactoring; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing; equalized snap point flank distance; added handleSize prop; restored snapping other knob on knob-drag when locked (29.01.2019)
+		2.0.0	retina setting default set to false, better code for retina display handling in general; minor refactoring; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing;
+				equalized snap point flank distance; added handleSize prop; restored snapping other knob on knob-drag when locked; removed barriers to using same startAt values (17.01.2019)
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
@@ -327,20 +328,12 @@ function sGlideRange(self, options){
 			}
 		}
 
-		// start points cannot be identical as that will break barDrag snapping for first knob (weird)
-		if (settings.startAt[0] === settings.startAt[1]){
-			if (settings.startAt[1] === 100)
-				settings.startAt[0] -= 0.00001;
-			else
-				settings.startAt[1] += 0.00001;
-		}
-
 		const handleSize = () => {
-			if (settings.handleSize === 'big')
-				return '4%';
-			else if (settings.handleSize === 'small')
-				return '1%';
-			return '2%';
+			switch (settings.handleSize) {
+				case 'big': return '4%';
+				case 'small': return '1%';
+				default: return '2%';
+			}
 		};
 
 		// local variables
@@ -718,7 +711,8 @@ function sGlideRange(self, options){
 						// first compare which is closer: m or n
 						// if n, m = n, closest = closest_n
 						// if locked & startAts different
-						if ((isLocked || barDrag) && settings.startAt[0] !== settings.startAt[1]){
+						// if ((isLocked || barDrag) && settings.startAt[0] !== settings.startAt[1]){
+						if (isLocked || barDrag){
 						// if (barDrag && settings.startAt[0] !== settings.startAt[1]){
 							let thisKnobToClosest = Math.abs(closest - m + knobWidthHalf);
 							let thatKnobToClosest = Math.abs(closest_n - n);
@@ -739,7 +733,8 @@ function sGlideRange(self, options){
 						if (snapType === 'hard'){
 
 							if (barDrag){
-								if (Math.abs(closest_n - knob1.offsetLeft) < Math.abs(closest - knob2.offsetLeft + knobWidthHalf)){
+								// if (Math.abs(closest_n - knob1.offsetLeft) < Math.abs(closest - knob2.offsetLeft + knobWidthHalf)){
+								if (Math.abs(closest_n - knob1.dataObj.px) < Math.abs(closest - knob2.dataObj.px)){
 									target = knob1;
 									// was_onSnapPoint_left = true;	// seems to work, not sure why
 									snapUpdate(closest_n, knobWidth);
@@ -795,17 +790,15 @@ function sGlideRange(self, options){
 								}*/
 								if (target === knob2){
 									was_onSnapPoint_right = true;
-									snapUpdate(closest, knobWidth, null, m);
+									snapUpdate(closest, knobWidth, null);
 									was_onSnapPoint_left = true;
-									moved = false;
-									return closest;
 								} else {
 									was_onSnapPoint_left = true;
 									snapUpdate(closest, knobWidth);
 									was_onSnapPoint_right = true;
-									moved = false;
-									return closest;
 								}
+								moved = false;
+								return closest;
 							}
 						} else {	// single knob drag
 							if (moved){
@@ -858,8 +851,9 @@ function sGlideRange(self, options){
 				options.onSnap.call(self, updateME.apply(that, pcts));
 			}
 
-		}, snapUpdate = (closest, knobWidth, isN, m) => {
-			const getFollowPos = () => (closest+knobWidth/4+knobWidth/2);
+		}, snapUpdate = (closest, knobWidth, isN) => {
+			// const getFollowPos = () => (closest+knobWidth/4+knobWidth/2);
+			const getFollowPos = () => (closest+knobWidth*0.75);
 
 			var followPos = getFollowPos();
 
@@ -872,12 +866,10 @@ function sGlideRange(self, options){
 				if ((isLocked || barDrag || barDrag_drop) && diff() > (self_width - knobWidth))
 					closest -= diff() - (self_width - knobWidth);
 
-				// Constrain left knob to left side - glitch most evident at hard snap
-				// A prior constraint is already set, but you need this extra one - leave it active
-				// Probably don't need this anymore...
-				// else if (closest > knob2.offsetLeft - (knobWidth/2))// && snapType === 'hard')
-				// 	closest = knob2.dataObj.px - (knobWidth/2);
-					// closest = knob2.offsetLeft - (knobWidth/2);
+				// true snap, when this knob is too close to snap point, but closer to that knob
+				else if (closest > knob2.dataObj.px && !snapType)
+					closest = knob2.dataObj.px;
+
 
 				css(knob1, {'left': closest}).data('px', closest);
 				css(follow1, {'width': (closest+knobWidth/4)});
@@ -899,14 +891,11 @@ function sGlideRange(self, options){
 				// patch: constraint left: if new knob1 pos < 0, set new closest value;
 				if ((isLocked || barDrag || barDrag_drop) && (closest-lockedDiff+knobWidth/2) <= 0)
 					closest -= diff();
-					// closest -= closest-lockedDiff+knobWidth/2;
 
-				// Constrain right knob to right side - glitch most evident at hard snap
-				// A prior constraint is already set, but you need this extra one - leave it active
-				// Probably don't need this anymore...
-				// else if (closest < knob1.offsetLeft)// && snapType === 'hard')
-				// 	closest = knob1.dataObj.px;
-					// closest = knob1.offsetLeft;	// can't use this value because DOM doesn't have decimal pxls. Use stored data!
+				// true snap, when this knob is too close to snap point, but closer to that knob
+				else if (closest < knob1.dataObj.px && !snapType)
+					closest = knob1.dataObj.px;
+
 
 				followPos = getFollowPos();
 

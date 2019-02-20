@@ -7,7 +7,8 @@ created:	1.11.2014
 version:	2.0.0
 
 	version history:
-		2.0.0	retina setting default set to false ... improved vertical positioning and alignments; unit default set to null; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing; added deep-extend to settings to properly support snap sub-object; restored snapping other knob on knob-drag when locked (29.01.2019)
+		2.0.0	retina setting default set to false ... improved vertical positioning and alignments; unit default set to null; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing; added deep-extend to settings to properly support snap sub-object;
+				restored snapping other knob on knob-drag when locked; removed barriers to using same startAt values (17.01.2019)
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
 		1.0.1	bug fix: text inputs were not selectable by mouse-drag in Chrome for jQuery - a proper if statement in the document's mousemove event listener solved it, thereby possibly increasing performance (applied to both jQuery and standalone) (01.02.2015)
 		1.0.0	created - born of sGlide
@@ -86,10 +87,10 @@ version:	2.0.0
 		startAt: function(pct){
 			this.each((index, el) => {
 				const self		= $(el);
-				const knobs		= self.children('.slider_knob'),
+				const //knobs		= self.children('.slider_knob'),
 					knob1		= self.children('.s_knob1'),
 					knob2		= self.children('.s_knob2'),
-					follows		= self.children('.follow_bar'),
+					// follows		= self.children('.follow_bar'),
 					follow1		= self.children('.follow1'),
 					follow2		= self.children('.follow2'),
 					guid		= self.attr('id');
@@ -203,20 +204,12 @@ version:	2.0.0
 					}
 				}
 
-				// start points cannot be identical as that will break barDrag snapping for first knob (weird)
-				if (settings.startAt[0] === settings.startAt[1]){
-					if (settings.startAt[1] === 100)
-						settings.startAt[0] -= 0.00001;
-					else
-						settings.startAt[1] += 0.00001;
-				}
-
 				const handleSize = () => {
-					if (settings.handleSize === 'big')
-						return '4%';
-					else if (settings.handleSize === 'small')
-						return '1%';
-					return '2%';
+					switch (settings.handleSize) {
+						case 'big': return '4%';
+						case 'small': return '1%';
+						default: return '2%';
+					}
 				};
 
 				// variables
@@ -471,7 +464,7 @@ version:	2.0.0
 					const increment = sw / (snaps - 1);
 					let step = increment;
 
-					while (step <= sw){
+					while (step <= sw+kw){
 						snapPxlValues.push(step);
 						step += increment;
 					}
@@ -530,7 +523,7 @@ version:	2.0.0
 
 				// vertical
 				const verticalTransform = () => {
-					if (markers && snaps > 0 && snaps < 10){
+					if (markers && is_snap){
 						const a = $('#'+guid+', #'+guid+'_markers');
 
 						a.wrapAll('<div id="'+guid+'_vert-marks" style="margin:0; z-index:997; width:'+width+unit+
@@ -572,7 +565,7 @@ version:	2.0.0
 				var was_onSnapPoint_left = true;
 				var was_onSnapPoint_right = true;
 				// var simulSnapped = false;
-				// var moved = false;
+				var moved = false;
 
 				// get closest snap mark (px)
 				const getClosest = x => {
@@ -600,7 +593,8 @@ version:	2.0.0
 							let closest = getClosest(m);
 
 							// if locked, get closest mark for other knob
-							if (isLocked || barDrag || barDrag_drop){
+							// for true snap only (when not both knobs are on snap points)
+							if ((isLocked || barDrag || barDrag_drop) && !snapType){
 								var n = (target[0] === knob1[0]) ? (m + lockedDiff - target.width()) : (m - lockedDiff);
 								var closest_n = getClosest(n);
 							}
@@ -614,7 +608,8 @@ version:	2.0.0
 								// first compare which is closer: m (this) or n (that)
 								// if n, m = n, closest = closest_n
 								// if locked & startAts different
-								if ((isLocked || barDrag) && settings.startAt[0] !== settings.startAt[1]){
+								// if ((isLocked || barDrag) && settings.startAt[0] !== settings.startAt[1]){
+								if (isLocked || barDrag){
 									// snap other, else snap current knob
 									let thisKnobToClosest = Math.abs(closest - m + knobWidthHalf);
 									let thatKnobToClosest = Math.abs(closest_n - n);
@@ -626,6 +621,7 @@ version:	2.0.0
 										boolN = true;
 										closest = closest_n;
 										m = n + knobWidthHalf / 8;
+										// thisKnobPos(n, knobWidthHalf);
 										// m = n + (knobWidthHalf - knobWidthHalf * 0.875);
 									} else m = thisKnobPos(m, knobWidthHalf);
 								} else m = thisKnobPos(m, knobWidthHalf);
@@ -638,7 +634,8 @@ version:	2.0.0
 									if (barDrag){
 										// if (storedSnapValues[0] !== valueObj[guid][0] || storedSnapValues[1] !== valueObj[guid][1]) is_onSnapPoint = true;
 										// valueObj[guid] = storedSnapValues;
-										if (Math.abs(closest_n - knob1[0].offsetLeft) < Math.abs(closest - knob2[0].offsetLeft)){
+										// if (Math.abs(closest_n - knob1[0].offsetLeft) < Math.abs(closest - knob2[0].offsetLeft)){
+										if (Math.abs(closest_n - knob1.data('px')) < Math.abs(closest - knob2.data('px'))){
 											target = knob1;
 											snapUpdate(closest_n, knobWidth);
 											was_onSnapPoint_right = true;
@@ -671,13 +668,13 @@ version:	2.0.0
 									}
 								}
 							} else {
-								lockedRangeAdjusts();
+								if (!barDrag) lockedRangeAdjusts();
 								// snapUpdate(closest, knobWidth, boolN);
 
 								if (barDrag_drop){
 									// if (storedSnapValues[0] !== valueObj[guid][0] || storedSnapValues[1] !== valueObj[guid][1]) is_onSnapPoint = true;
 									// valueObj[guid] = storedSnapValues;
-									if (Math.abs(closest_n - knob1[0].offsetLeft + knobWidthHalf) < Math.abs(closest - knob2[0].offsetLeft)){
+									/* if (Math.abs(closest_n - knob1[0].offsetLeft + knobWidthHalf) < Math.abs(closest - knob2[0].offsetLeft)){
 										target = knob1;
 										was_onSnapPoint_left = true;	// seems to work, not sure why
 										snapUpdate(closest_n, knobWidth);
@@ -689,15 +686,31 @@ version:	2.0.0
 										snapUpdate(closest, knobWidth);
 										was_onSnapPoint_left = true;
 										return closest;
+									} */
+									if (moved){
+										if (target === knob2) {
+											was_onSnapPoint_right = true;
+											snapUpdate(closest, knobWidth, null);
+											was_onSnapPoint_left = true;
+										} else {
+											was_onSnapPoint_left = true;
+											snapUpdate(closest, knobWidth);
+											was_onSnapPoint_right = true;
+										}
+										moved = false;
+										return closest;
 									}
 								} else {
-									switch (target[0]){
-										case knob1[0]: was_onSnapPoint_left = true; break;
-										case knob2[0]: was_onSnapPoint_right = true; break;
+									if (moved){
+										switch (target[0]){
+											case knob1[0]: was_onSnapPoint_left = true; break;
+											case knob2[0]: was_onSnapPoint_right = true; break;
+										}
+	
+										snapUpdate(closest, knobWidth);
+										moved = false;
+										return closest;
 									}
-
-									snapUpdate(closest, knobWidth);
-									return closest;
 								}
 
 							}
@@ -744,7 +757,8 @@ version:	2.0.0
 				};
 
 				const snapUpdate = (closest, knobWidth, isN) => {
-					const getFollowPos = () => (closest+knobWidth/4+knobWidth/2);
+					// const getFollowPos = () => (closest+knobWidth/4+knobWidth/2);
+					const getFollowPos = () => (closest+knobWidth*0.75);
 
 					var followPos = getFollowPos();
 
@@ -757,11 +771,9 @@ version:	2.0.0
 						if ((isLocked || barDrag || barDrag_drop) && diff() > (self_width - knobWidth))
 							closest -= diff() - (self_width - knobWidth);
 
-						// constrain left knob to left side - glitch most evident at hard snap
-						// a prior constraint is already set, but you need this extra one - leave it active
-						// else if (closest > knob2[0].offsetLeft - (knobWidth/2))// && snapType === 'hard')
-						// 	closest = knob2[0].data('px') - (knobWidth/2);
-						// 	closest = knob2[0].offsetLeft - (knobWidth/2);
+						// true snap, when this knob is too close to snap point, but closer to that knob
+						else if (closest > knob2.data('px') && !snapType)
+							closest = knob2.data('px');
 
 						knob1.css('left', closest).data('px', closest);
 						follow1.css('width', (closest+knobWidth/4));
@@ -782,14 +794,11 @@ version:	2.0.0
 
 						// patch: constraint left: if new knob1 pos < 0, set new closest value;
 						if ((isLocked || barDrag || barDrag_drop) && (closest-lockedDiff+knobWidth/2) <= 0)
-							// closest -= closest-lockedDiff+knobWidth/2;
 							closest -= diff();
 
-						// constrain right knob to right side - glitch most evident at hard snap
-						// a prior constraint is already set, but you need this extra one - leave it active
-						// else if (closest < knob1[0].offsetLeft)// && snapType === 'hard')
-						// 	closest = knob1[0].data('px');
-						// 	closest = knob1[0].offsetLeft;
+						// true snap, when this knob is too close to snap point, but closer to that knob
+						else if (closest < knob1.data('px') && !snapType)
+							closest = knob1.data('px');
 
 						followPos = getFollowPos();
 
@@ -839,8 +848,8 @@ version:	2.0.0
 						}
 
 						if (barDrag){
-							if (z === null) z = target[0].offsetLeft - x + (knobWidth / 2);
-							// if (z === null) z = target.data('px') + knobWidth - x + knobWidth / 2;
+							// if (z === null) z = target[0].offsetLeft - x + (knobWidth / 2);
+							if (z === null) z = target.data('px') + knobWidth - x + knobWidth / 2;
 							x += z;
 							if (!gotLockedPositions) getLockedPositions();
 						}
