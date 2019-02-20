@@ -22,14 +22,14 @@
 <!-- <script type="text/javascript" src="../nodeListener/nodelistenerES6notify.js"></script> -->
 
 <!-- <script src="http://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script> -->
-<!-- <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>
-<script type="text/javascript" src="jquery.sglide.range_es6.js"></script> -->
-<script type="text/javascript" src="sglide.range_es6.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>
+<script type="text/javascript" src="jquery.sglide.range_es6.js"></script>
+<!-- <script type="text/javascript" src="sglide.range_es6.js"></script> -->
 <!-- <script type="text/javascript" src="../../~web~/sGlide/jquery.sglide.2.min.js"></script> -->
-<!-- <script type="text/javascript" src="../../~web~/sGlide/sglide.2.min.js"></script> -->
+<!-- <script type="text/javascript" src="sglide.range.2.min.js"></script> -->
 
 <script type="text/javascript">
-	jQ = 0;
+	jQ = 1;
 	// + bar-drag while hard-snap: run snapOutput only on snap, on every snap; solved when using drag callback prop
 	// + constraint / snap point mismatch - removed superfluous constrainer in snapUpdate - and replaced with better conditional one
 	// + vertical, soft snap: dividual handle snapping registration wrong!!
@@ -44,7 +44,7 @@
 				elPct.innerHTML = this.id+': '+Math.round(o.percentRange[0]) + ' &mdash; ' + Math.round(o.percentRange[1]) + '%';
 			},
 			settings	= {
-				'startAt': [15,35],
+				'startAt': [15,55],
 				// 'startAt': [25,75],
 				'width': 620,
 				'height': 22,
@@ -56,18 +56,18 @@
 				// 'locked': true,//(i === 0) ? true : false,
 				'totalRange': [58,102],
 				'snap': {
-					// 'marks': true,
+					'marks': true,
 					'type': 'hard',
 					// 'sensitivity': 1,
 					'points': 6
 				},
 				'retina': true,
-				// 'vertical': true,
-				// 'disabled': true,
+				'vertical': true,
+				'disabled': true,
 				// 'noHandle': true,
 				'handleSize': 'small',
-				'drag': callback
-				// 'onSnap': callback
+				// 'drag': callback
+				'onSnap': callback
 			};
 
 		if (!jQ){
