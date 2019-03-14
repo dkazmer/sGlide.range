@@ -7,6 +7,7 @@ created:	1.11.2014
 version:	2.0.0
 
 	version history:
+		2.0.1	image-load promise refactored, yielding a truer readiness
 		2.0.0	retina setting default set to false ... improved vertical positioning and alignments; unit default set to null; fixed soft-snap registration issue on bar-drag; fixed issue with handle-drag in vert-marks [correct container to offset]; better retina img processing; added deep-extend to settings to properly support snap sub-object;
 				restored snapping other knob on knob-drag when locked; removed barriers to using same startAt values; start snap points at 2 (20.02.2019)
 		1.3.0	added snap sensitivity - accepts decimal values between 0 & 3 inclusive; added bar-drag; bug fix: set to correct values at onSnap asynchronously; cleaner: relying on offset values instead of style (type String); slight performance improvement with constraint checker mitigation; improved hard snap, esp. when startAt values are not at markers; better destroy method (06.04.2017)
@@ -240,13 +241,10 @@ version:	2.0.0
 
 					if (!imgArray.length) return;
 
-					imgArray.forEach((item, i) => {
+					imgArray.forEach(item => {
 						promises.push(new Promise(resolve => {
 							const img = new Image();
-							img.onload = () => {
-								cb(img, i);
-								resolve();
-							};
+							img.onload = resolve;
 							img.src = item;
 						}));
 					});
@@ -261,13 +259,9 @@ version:	2.0.0
 					img = (img instanceof Array) ? img : [img, img];
 
 					if (retina){
-						const processRetinaImage = fileName => {
-							const ix = fileName.lastIndexOf('.');
-							return fileName.slice(0, ix) + '@2x' + fileName.slice(ix);
-						};
-
 						for (let i = 0; i < img.length; i++){
-							img[i] = processRetinaImage(img[i]);
+							let ix = img[i].lastIndexOf('.');
+							img[i] = img[i].slice(0, ix) + '@2x' + img[i].slice(ix);
 						}
 					}
 
@@ -337,7 +331,14 @@ version:	2.0.0
 						}
 					};
 
-					loadKnobImgs(img, imageLoaded).then(() => $(el).trigger(eventMakeReady));
+					// loadKnobImgs(img, imageLoaded).then(() => $(el).trigger(eventMakeReady));
+					loadKnobImgs(img).then(e => {
+						imageLoaded(e[0].path[0], 0);
+						imageLoaded(e[1].path[0], 1);
+						setTimeout(() => {
+							$(el).trigger(eventMakeReady);
+						}, 0);
+					});
 				} else {
 					let d = settings.height / 2;
 					self.css({'border-radius': (r_corners ? d+'px' : '0'), 'overflow': 'hidden'});
@@ -427,25 +428,29 @@ version:	2.0.0
 				//------------------------------------------------------------------------------------------------------------------------------------
 				// snap marks, vertical
 
-				var preSnap = function(){
+				const preSnap = () => {
 					// snap to nearest point on hard or snapOffset
-					var was_locked = isLocked;
+					const was_locked = isLocked;
 					if (was_locked) isLocked = false;
 
-					if (snapType === 'hard'){
-						target = knob1;
-						snapDragon(knob1[0].offsetLeft);
-						target = knob2;
-						snapDragon(knob2[0].offsetLeft);
-					} else if (snapType === 'soft'){
-						const snapKnobs = el => {
-							moved = true;
-							target = el;
-							doSnap('soft', el[0].offsetLeft);
-						};
+					switch (snapType){
+						case 'hard': {
+							target = knob1;
+							snapDragon(knob1[0].offsetLeft);
 
-						snapKnobs(knob1);
-						snapKnobs(knob2);
+							target = knob2;
+							snapDragon(knob2[0].offsetLeft);
+						} break;
+						case 'soft': {
+							const snapKnobs = el => {
+								moved = true;
+								target = el;
+								doSnap('soft', el[0].offsetLeft);
+							};
+
+							snapKnobs(knob1);
+							snapKnobs(knob2);
+						} break;
 					}
 
 					if (was_locked) isLocked = true;
@@ -471,12 +476,9 @@ version:	2.0.0
 				};
 
 				const setSnapValues = () => {
-					// if (snaps === 1) snaps = 2;
-
 					// pixel
 					const kw = (knob1.width() + knob2.width()) / 2;
 					const sw = self_width - kw * 2;
-					// snapPxlValues[0] += kw;
 
 					setPixelValues(sw, kw);
 

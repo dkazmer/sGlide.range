@@ -30,7 +30,7 @@
   "bugs": {
     "url": "https://github.com/dkazmer/sGlide.range/issues"
   },
-  "homepage": "http://webshifted.com/sGlide.range",
+  "homepage": "https://webshifted.com/sGlide.range",
   "dependencies": {
     "jquery": ">=3"
   }
