@@ -172,13 +172,10 @@ function sGlideRange(self, options){
 
 		if (!imgArray.length) return;
 
-		imgArray.forEach((item, i) => {
+		imgArray.forEach(item => {
 			promises.push(new Promise(resolve => {
 				const img = new Image();
-				img.onload = () => {
-					cb(img, i);
-					resolve();
-				};
+				img.onload = resolve;
 				img.src = item;
 			}));
 		});
@@ -380,13 +377,9 @@ function sGlideRange(self, options){
 
 			// retina
 			if (retina){
-				const processRetinaImage = fileName => {
-					const ix = fileName.lastIndexOf('.');
-					return fileName.slice(0, ix) + '@2x' + fileName.slice(ix);
-				};
-
 				for (let i = 0; i < img.length; i++){
-					img[i] = processRetinaImage(img[i]);
+					let ix = img[i].lastIndexOf('.');
+					img[i] = img[i].slice(0, ix) + '@2x' + img[i].slice(ix);
 				}
 			}
 
@@ -445,7 +438,13 @@ function sGlideRange(self, options){
 				}
 			};
 
-			loadKnobImgs(img, imageLoaded).then(() => window.dispatchEvent(eventMakeReady));
+			loadKnobImgs(img).then(e => {
+				imageLoaded(e[0].path[0], 0);
+				imageLoaded(e[1].path[0], 1);
+				setTimeout(() => {
+					window.dispatchEvent(eventMakeReady);
+				}, 0);
+			});
 		} else {
 			var d = settings.height / 2;
 			css(self, {'border-radius': (r_corners ? d+'px' : '0'), 'overflow': 'hidden'});
@@ -526,23 +525,27 @@ function sGlideRange(self, options){
 
 		const preSnap = () => {
 			// snap to nearest point on hard or snapOffset
-			var was_locked = isLocked;
+			const was_locked = isLocked;
 			if (was_locked) isLocked = false;
 
-			if (snapType === 'hard'){
-				target = knob1;
-				snapDragon(knob1.offsetLeft);
-				target = knob2;
-				snapDragon(knob2.offsetLeft);
-			} else if (snapType === 'soft'){
-				const snapKnobs = el => {
-					moved = true;
-					target = el;
-					doSnap('soft', el.offsetLeft);
-				};
+			switch (snapType){
+				case 'hard': {
+					target = knob1;
+					snapDragon(knob1.offsetLeft);
 
-				snapKnobs(knob1);
-				snapKnobs(knob2);
+					target = knob2;
+					snapDragon(knob2.offsetLeft);
+				} break;
+				case 'soft': {
+					const snapKnobs = el => {
+						moved = true;
+						target = el;
+						doSnap('soft', el.offsetLeft);
+					};
+
+					snapKnobs(knob1);
+					snapKnobs(knob2);
+				} break;
 			}
 
 			if (was_locked) isLocked = true;

@@ -22,14 +22,14 @@
 <!-- <script type="text/javascript" src="../nodeListener/nodelistenerES6notify.js"></script> -->
 
 <!-- <script src="http://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script> -->
-<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>
-<script type="text/javascript" src="jquery.sglide.range_es6.js"></script>
-<!-- <script type="text/javascript" src="sglide.range_es6.js"></script> -->
+<!-- <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>
+<script type="text/javascript" src="jquery.sglide.range_es6.js"></script> -->
+<script type="text/javascript" src="sglide.range_es6.js"></script>
 <!-- <script type="text/javascript" src="../../~web~/sGlide/jquery.sglide.2.min.js"></script> -->
 <!-- <script type="text/javascript" src="sglide.range.2.min.js"></script> -->
 
 <script type="text/javascript">
-	jQ = 1;
+	jQ = 0;
 	// + bar-drag while hard-snap: run snapOutput only on snap, on every snap; solved when using drag callback prop
 	// + constraint / snap point mismatch - removed superfluous constrainer in snapUpdate - and replaced with better conditional one
 	// + vertical, soft snap: dividual handle snapping registration wrong!!
@@ -49,30 +49,30 @@
 				'width': 620,
 				'height': 22,
 				'unit': 'px',
-				'image': 'img/knob_.png',
+				// 'image': 'img/knob_.png',
 				// 'image': ['img/knob_.png','img/knob_.png'],
-				// 'image': ['img/images/range_knob_01.png', 'img/images/range_knob_02.png'],
+				'image': ['img/images/range_knob_01.png', 'img/images/range_knob_02.png'],
 				// 'pill': false,
 				// 'locked': true,//(i === 0) ? true : false,
 				'totalRange': [58,102],
 				'snap': {
 					'marks': true,
-					'type': 'hard',
+					// 'type': 'soft',
 					// 'sensitivity': 1,
 					'points': 6
 				},
-				'retina': true,
-				'vertical': true,
-				'disabled': true,
+				// 'retina': true,
+				// 'vertical': true,
+				// 'disabled': true,
 				// 'noHandle': true,
-				'handleSize': 'small',
+				// 'handleSize': 'small',
 				// 'drag': callback
 				'onSnap': callback
 			};
 
 		if (!jQ){
 			nodes = Array.prototype.slice.call(nodes);
-			for (var el of nodes){
+			for (let el of nodes){
 				instances.push(new sGlideRange(el, settings).load(function(o){
 					console.log('>> load: js', o, this);
 				}));
